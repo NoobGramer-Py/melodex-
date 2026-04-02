@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #0a0a0a;
+    color: #ffffff;
+    font-family: 'DM Sans', 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  #root {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #2a2a2a;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3a3a3a;
+  }
+
+  /* Range input (seek bar, volume) */
+  input[type='range'] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  input[type='range']::-webkit-slider-runnable-track {
+    background: #2a2a2a;
+    height: 4px;
+    border-radius: 2px;
+  }
+
+  input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 12px;
+    width: 12px;
+    border-radius: 50%;
+    background: #ffffff;
+    margin-top: -4px;
+    transition: transform 0.1s ease;
+  }
+
+  input[type='range']:hover::-webkit-slider-thumb {
+    transform: scale(1.3);
+    background: #1DB954;
+  }
+
+  input[type='range']::-moz-range-track {
+    background: #2a2a2a;
+    height: 4px;
+    border-radius: 2px;
+  }
+
+  input[type='range']::-moz-range-thumb {
+    height: 12px;
+    width: 12px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: none;
+  }
+}
+
+@layer utilities {
+  .text-gradient-green {
+    background: linear-gradient(135deg, #1DB954, #1ed760);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glass {
+    background: rgba(20, 20, 20, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
