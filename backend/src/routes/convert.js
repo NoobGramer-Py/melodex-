@@ -10,6 +10,7 @@ const {
   convertToMp3,
   cleanupTempFile,
   searchYouTube,
+  getStreamUrl,
 } = require('../services/converter');
 const supabase = require('../lib/supabase');
 
@@ -240,6 +241,27 @@ router.get('/search', async (req, res) => {
   } catch (err) {
     console.error('[Search] Error:', err.message);
     res.status(500).json({ error: 'Failed to fetch search results' });
+  }
+});
+
+/**
+ * GET /api/convert/stream?url=<youtubeUrl>
+ * Returns a direct audio stream URL for playback.
+ */
+router.get('/stream', async (req, res) => {
+  const { url } = req.query;
+  
+  const validation = validateYouTubeUrl(url);
+  if (!validation.valid) {
+    return res.status(400).json({ error: validation.reason });
+  }
+
+  try {
+    const streamUrl = await getStreamUrl(url);
+    res.json({ streamUrl });
+  } catch (err) {
+    console.error('[Stream] Error:', err.message);
+    res.status(500).json({ error: 'Failed to resolve stream URL' });
   }
 });
 

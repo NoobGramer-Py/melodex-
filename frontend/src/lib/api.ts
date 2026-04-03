@@ -188,6 +188,13 @@ export async function searchYouTube(query: string, limit = 10) {
   );
 }
 
+export async function fetchStreamUrl(youtubeUrl: string) {
+  const data = await apiFetch<{ streamUrl: string }>(
+    `/api/convert/stream?url=${encodeURIComponent(youtubeUrl)}`
+  );
+  return data.streamUrl;
+}
+
 export async function searchArtists(query: string) {
   return apiFetch<{ results: import('../types').Artist[] }>(
     `/api/artists/search?q=${encodeURIComponent(query)}`

@@ -79,6 +79,25 @@ function getBestThumbnail(thumbnails) {
 }
 
 /**
+ * Gets a direct playable audio stream URL for a YouTube video.
+ */
+async function getStreamUrl(youtubeUrl) {
+  const args = [
+    '-f', 'ba', // best audio
+    '-g',       // get URL
+    '--no-playlist',
+    '--no-warnings',
+    youtubeUrl,
+  ];
+
+  const { stdout } = await execFileAsync('yt-dlp', args, {
+    timeout: 15000,
+  });
+
+  return stdout.trim();
+}
+
+/**
  * Downloads and converts a YouTube video to MP3.
  * Returns the path to the output file.
  */
@@ -214,12 +233,15 @@ async function searchYouTube(query, limit = 10) {
         try {
           const info = JSON.parse(line);
           return {
+            id: info.id || `yt-${Date.now()}-${Math.random()}`,
             title: info.title || 'Unknown Title',
             artist: info.uploader || info.channel || 'Unknown Artist',
             thumbnail_url: info.thumbnails?.[0]?.url || info.thumbnail || '',
             duration_seconds: Math.round(info.duration || 0),
-            youtube_id: info.id || info.url?.split('v=')[1],
-            url: info.url || `https://www.youtube.com/watch?v=${info.id}`,
+            youtube_id: info.id,
+            storage_path: '', // Mark as online song
+            audio_url: `https://www.youtube.com/watch?v=${info.id}`,
+            created_at: new Date().toISOString(),
           };
         } catch (e) {
           return null;
@@ -245,4 +267,5 @@ module.exports = {
   convertToMp3,
   cleanupTempFile,
   searchYouTube,
+  getStreamUrl,
 };

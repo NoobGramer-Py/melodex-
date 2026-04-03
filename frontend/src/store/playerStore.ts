@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Song } from '../types';
-import { fetchSignedUrl } from '../lib/api';
+import { fetchSignedUrl, fetchStreamUrl } from '../lib/api';
 import { useLibraryStore } from './libraryStore';
 
 // Single shared Audio element — avoids multiple audio instances
@@ -36,12 +36,26 @@ interface PlayerStore {
 }
 
 async function resolveAudioUrl(song: Song): Promise<string> {
-  // If song already has a valid audio_url, use it
-  if (song.audio_url && song.audio_url.startsWith('http')) {
-    return song.audio_url;
+  // 1. If it's a song from the library (has storage_path), use signed URL
+  if (song.storage_path) {
+    return fetchSignedUrl(song.storage_path, song.id || undefined);
   }
-  // Otherwise fetch a fresh signed URL
-  return fetchSignedUrl(song.storage_path, song.id || undefined);
+
+  // 2. If it's an online song (has youtube_id and likely a watch URL in audio_url)
+  // or it already has a direct stream URL
+  if (song.youtube_id) {
+    // If audio_url is already a valid blob or direct CDN link, use it
+    if (song.audio_url && (song.audio_url.startsWith('blob:') || song.audio_url.includes('googlevideo.com'))) {
+       return song.audio_url;
+    }
+    
+    // Otherwise, it's a watch link or needs resolving, fetch direct stream URL from backend
+    const watchUrl = `https://www.youtube.com/watch?v=${song.youtube_id}`;
+    return fetchStreamUrl(watchUrl);
+  }
+
+  // 3. Fallback to audio_url if available
+  return song.audio_url || '';
 }
 
 export const usePlayerStore = create<PlayerStore>((set, get) => {
