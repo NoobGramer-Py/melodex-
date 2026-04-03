@@ -44,7 +44,7 @@ export function ListenOnlineSearch() {
       } finally {
         setLoading(false);
       }
-    }, 400);
+    }, 200); // Super low debounce for live feel
 
     return () => clearTimeout(timer);
   }, [query]);
@@ -93,8 +93,14 @@ export function ListenOnlineSearch() {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => query.trim().length > 0 && setIsOpen(true)}
-          className="w-full bg-surface/50 backdrop-blur-xl border border-white/10 rounded-full pl-12 pr-12 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all placeholder:text-textMuted/50 shadow-2xl"
+          className={`w-full bg-surface/50 backdrop-blur-xl border rounded-full pl-12 pr-12 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all placeholder:text-textMuted/50 shadow-2xl ${
+            loading ? 'border-accent/50 animate-pulse' : 'border-white/10'
+          }`}
         />
+        <div className="absolute right-14 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            {loading && <span className="text-[10px] text-accent font-bold uppercase tracking-widest animate-pulse">Syncing...</span>}
+            <span className={`w-2 h-2 rounded-full ${loading ? 'bg-accent animate-ping' : 'bg-green-500/50'}`} />
+        </div>
         {query && (
           <button 
             onClick={() => { setQuery(''); setResults([]); }}

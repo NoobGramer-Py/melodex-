@@ -193,11 +193,11 @@ async function searchYouTube(query, limit = 10) {
 
   const args = [
     `ytsearch${limit}:${query} official audio`,
-    '--dump-json',
+    '--flat-playlist', // EXTREMELY IMPORTANT for speed: only fetch search result page metadata
+    '--print-json',    // Use print-json for speed over dump-json
     '--no-playlist',
     '--no-warnings',
     '--quiet',
-    '--match-filter', 'duration < 600 & !is_live', // Fast filtering for songs, ignore streams
   ];
 
   try {
@@ -211,16 +211,21 @@ async function searchYouTube(query, limit = 10) {
       .split('\n')
       .filter(line => line.trim())
       .map(line => {
-        const info = JSON.parse(line);
-        return {
-          title: info.title || 'Unknown Title',
-          artist: info.uploader || info.channel || 'Unknown Artist',
-          thumbnail_url: info.thumbnail || getBestThumbnail(info.thumbnails),
-          duration_seconds: Math.round(info.duration || 0),
-          youtube_id: info.id,
-          url: `https://www.youtube.com/watch?v=${info.id}`,
-        };
-      });
+        try {
+          const info = JSON.parse(line);
+          return {
+            title: info.title || 'Unknown Title',
+            artist: info.uploader || info.channel || 'Unknown Artist',
+            thumbnail_url: info.thumbnails?.[0]?.url || info.thumbnail || '',
+            duration_seconds: Math.round(info.duration || 0),
+            youtube_id: info.id || info.url?.split('v=')[1],
+            url: info.url || `https://www.youtube.com/watch?v=${info.id}`,
+          };
+        } catch (e) {
+          return null;
+        }
+      })
+      .filter(Boolean);
 
     searchCache.set(cacheKey, { timestamp: now, results });
     return results;
