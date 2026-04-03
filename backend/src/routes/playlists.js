@@ -8,12 +8,11 @@ const supabase = require('../lib/supabase');
  * Get all playlists for the authenticated user, with song counts.
  */
 router.get('/', requireAuth, async (req, res) => {
-  const { data: playlists, error } = await supabase
+  const { data: rawPlaylists, error } = await supabase
     .from('playlists')
     .select(`
       *,
       playlist_songs (
-        count,
         songs (
           duration_seconds,
           thumbnail_url
@@ -28,8 +27,24 @@ router.get('/', requireAuth, async (req, res) => {
     return res.status(500).json({ error: 'Failed to fetch playlists' });
   }
 
+  // Calculate computed fields for unified frontend consumption
+  const playlists = rawPlaylists.map(p => {
+    const songs = (p.playlist_songs || [])
+      .map(ps => ps.songs)
+      .filter(Boolean);
+
+    return {
+      ...p,
+      song_count: songs.length,
+      total_duration: songs.reduce((sum, song) => sum + (song.duration_seconds || 0), 0),
+      cover_thumbnail: songs[0]?.thumbnail_url || null,
+      playlist_songs: undefined // Remove junction data before sending to client
+    };
+  });
+
   res.json({ playlists });
 });
+
 
 /**
  * GET /api/playlists/:id
@@ -108,8 +123,17 @@ router.post('/', requireAuth, async (req, res) => {
     return res.status(500).json({ error: 'Failed to create playlist' });
   }
 
-  res.status(201).json({ playlist });
+  // Consistent structure with GET /api/playlists
+  const playlistWithDefaults = {
+    ...playlist,
+    song_count: 0,
+    total_duration: 0,
+    cover_thumbnail: null,
+  };
+
+  res.status(201).json({ playlist: playlistWithDefaults });
 });
+
 
 /**
  * PATCH /api/playlists/:id
