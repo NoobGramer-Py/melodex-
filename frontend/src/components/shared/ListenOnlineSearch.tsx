@@ -3,7 +3,11 @@ import { Search, Play, X, Loader2 } from 'lucide-react';
 import { searchYouTube } from '../../lib/api';
 import type { Song } from '../../types';
 import { usePlayerStore } from '../../store/playerStore';
+import { useLibraryStore } from '../../store/libraryStore';
+import { useAuthStore } from '../../store/authStore';
 import { Thumbnail } from '../shared/Thumbnail';
+import { Heart } from 'lucide-react';
+
 
 export function ListenOnlineSearch() {
   const [query, setQuery] = useState('');
@@ -17,6 +21,9 @@ export function ListenOnlineSearch() {
   });
   const containerRef = useRef<HTMLDivElement>(null);
   const { playSong, preResolve } = usePlayerStore();
+  const { toggleLikeSong, songs: librarySongs } = useLibraryStore();
+  const { user } = useAuthStore();
+
 
   useEffect(() => {
     if (!query.trim()) {
@@ -174,7 +181,26 @@ export function ListenOnlineSearch() {
                     </h4>
                     <p className="text-sm text-textMuted truncate">{song.artist}</p>
                   </div>
+
+                  {/* Like Button */}
+                  <div 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleLikeSong(song, !!user);
+                    }}
+                    className={`p-2 rounded-full transition-all ${
+                      librarySongs.find(ls => ls.id === (song.youtube_id || song.id))?.is_liked 
+                        ? 'text-red-500 bg-red-500/10' 
+                        : 'text-textMuted hover:text-red-400 hover:bg-white/5 opacity-0 group-hover/item:opacity-100'
+                    }`}
+                  >
+                    <Heart 
+                      size={16} 
+                      fill={librarySongs.find(ls => ls.id === (song.youtube_id || song.id))?.is_liked ? 'currentColor' : 'none'} 
+                    />
+                  </div>
                 </button>
+
               ))
             )}
             

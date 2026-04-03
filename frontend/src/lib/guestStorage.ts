@@ -16,12 +16,27 @@ export function getGuestSongs(): GuestSong[] {
 
 export function addGuestSong(song: GuestSong): void {
   const songs = getGuestSongs();
-  const existing = songs.findIndex(s => s.id === song.id);
-  if (existing === -1) {
+  const existingIndex = songs.findIndex(s => s.id === song.id);
+  
+  if (existingIndex !== -1) {
+    songs[existingIndex] = song;
+  } else {
     songs.unshift(song);
+  }
+  
+  localStorage.setItem(GUEST_SONGS_KEY, JSON.stringify(songs));
+}
+
+export function updateGuestSong(id: string, updates: Partial<GuestSong>): void {
+  const songs = getGuestSongs();
+  const index = songs.findIndex(s => s.id === id);
+  
+  if (index !== -1) {
+    songs[index] = { ...songs[index], ...updates };
     localStorage.setItem(GUEST_SONGS_KEY, JSON.stringify(songs));
   }
 }
+
 
 export function deleteGuestSong(id: string): void {
   const songs = getGuestSongs().filter(s => s.id !== id);

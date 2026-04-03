@@ -60,8 +60,17 @@ export const useLibraryStore = create<LibraryStore>()(
         set({ loading: true });
         try {
           if (isAuthenticated) {
-            const { songs } = await fetchSongs(get().sort, get().order);
-            set({ songs, initialized: true, lastAuthStatus: isAuthenticated });
+            const { songs: serverSongs } = await fetchSongs(get().sort, get().order);
+            // Safety merge: keep local is_liked status if server doesn't have it
+            const currentSongs = get().songs;
+            const mergedSongs = serverSongs.map(ss => {
+              const local = currentSongs.find(ls => ls.id === ss.id);
+              return { 
+                ...ss, 
+                is_liked: ss.is_liked !== undefined ? ss.is_liked : local?.is_liked 
+              };
+            });
+            set({ songs: mergedSongs, initialized: true, lastAuthStatus: isAuthenticated });
           } else {
             const guestSongs = getGuestSongs();
             set({ songs: guestSongs, initialized: true, lastAuthStatus: isAuthenticated });
@@ -125,14 +134,14 @@ export const useLibraryStore = create<LibraryStore>()(
           if (isAuthenticated) {
             try {
               const { createSong } = await import('../lib/api');
-              // Persist to DB for authenticated users
-              await createSong({
-                ...targetSong,
-                is_liked: true
-              });
+              await createSong({ ...targetSong, is_liked: true });
             } catch (err) {
               console.error('[Library] Failed to create song in DB via like:', err);
             }
+          } else {
+            // Guest mode persistence
+            const { addGuestSong } = await import('../lib/guestStorage');
+            addGuestSong({ ...newSong } as any);
           }
           return;
         }
@@ -154,8 +163,13 @@ export const useLibraryStore = create<LibraryStore>()(
               songs: state.songs.map(s => s.id === targetSong.id ? { ...s, is_liked: !newStatus } : s)
             }));
           }
+        } else {
+          // Guest mode persistence
+          const { updateGuestSong } = await import('../lib/guestStorage');
+          updateGuestSong(targetSong.id, { is_liked: newStatus });
         }
       },
+
 
 
 
