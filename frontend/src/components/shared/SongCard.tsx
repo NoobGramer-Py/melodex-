@@ -11,7 +11,7 @@ interface SongCardProps {
 }
 
 export function SongCard({ song, onMenuClick, queue }: SongCardProps) {
-  const { currentSong, isPlaying, playSong } = usePlayerStore();
+  const { currentSong, isPlaying, playSong, preResolve } = usePlayerStore();
   const isCurrent = currentSong?.id === song.id;
 
   const handlePlay = (e: React.MouseEvent) => {
@@ -19,11 +19,20 @@ export function SongCard({ song, onMenuClick, queue }: SongCardProps) {
     playSong(song, queue);
   };
 
+  const handleMouseEnter = () => {
+    // Only pre-resolve online songs to save backend resources
+    if (song.youtube_id && !isCurrent) {
+      preResolve(song);
+    }
+  };
+
   return (
     <div 
       className="group bg-surface hover:bg-surfaceHover p-4 rounded-xl transition-all duration-300 cursor-pointer relative"
       onClick={handlePlay}
+      onMouseEnter={handleMouseEnter}
     >
+
       <div className="relative aspect-square mb-4 rounded-lg overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow">
         <Thumbnail 
           src={song.thumbnail_url} 

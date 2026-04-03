@@ -13,6 +13,11 @@ const MAX_DURATION_SECONDS = 1200; // 20 minutes max
 const searchCache = new Map();
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
+// Cache for direct stream URLs (YouTube stream URLs usually expire in 6 hours, we'll cache for 3 hours)
+const streamUrlCache = new Map();
+const CACHE_TTL_STREAM = 3 * 60 * 60 * 1000; 
+
+
 /**
  * Validates that the URL is a YouTube URL and not something dangerous.
  * Security: prevents SSRF by whitelisting YouTube domains only.
@@ -82,6 +87,14 @@ function getBestThumbnail(thumbnails) {
  * Gets a direct playable audio stream URL for a YouTube video.
  */
 async function getStreamUrl(youtubeUrl) {
+  const now = Date.now();
+  if (streamUrlCache.has(youtubeUrl)) {
+    const { timestamp, url } = streamUrlCache.get(youtubeUrl);
+    if (now - timestamp < CACHE_TTL_STREAM) {
+       return url;
+    }
+  }
+
   const args = [
     '-f', 'ba', // best audio
     '-g',       // get URL
@@ -94,8 +107,11 @@ async function getStreamUrl(youtubeUrl) {
     timeout: 15000,
   });
 
-  return stdout.trim();
+  const streamUrl = stdout.trim();
+  streamUrlCache.set(youtubeUrl, { timestamp: now, url: streamUrl });
+  return streamUrl;
 }
+
 
 /**
  * Downloads and converts a YouTube video to MP3.

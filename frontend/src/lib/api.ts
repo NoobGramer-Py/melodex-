@@ -200,3 +200,5 @@ export async function searchArtists(query: string) {
     `/api/artists/search?q=${encodeURIComponent(query)}`
   );
 }
+
+// Visual sync comment

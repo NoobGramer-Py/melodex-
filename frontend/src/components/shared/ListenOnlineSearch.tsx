@@ -16,7 +16,7 @@ export function ListenOnlineSearch() {
     return saved ? JSON.parse(saved) : [];
   });
   const containerRef = useRef<HTMLDivElement>(null);
-  const { playSong } = usePlayerStore();
+  const { playSong, preResolve } = usePlayerStore();
 
   useEffect(() => {
     if (!query.trim()) {
@@ -153,6 +153,7 @@ export function ListenOnlineSearch() {
                 <button
                   key={song.youtube_id || song.id}
                   onClick={() => handleSelect(song)}
+                  onMouseEnter={() => preResolve(song)}
                   className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all text-left group/item ${
                     selectedIndex === index ? 'bg-white/20 scale-[1.01] shadow-xl' : 'hover:bg-white/10'
                   }`}
