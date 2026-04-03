@@ -9,6 +9,7 @@ const {
   fetchMetadata,
   convertToMp3,
   cleanupTempFile,
+  searchYouTube,
 } = require('../services/converter');
 const supabase = require('../lib/supabase');
 
@@ -221,6 +222,25 @@ router.post('/signed-url', optionalAuth, async (req, res) => {
   }
 
   res.json({ url: data.signedUrl });
+});
+
+/**
+ * GET /api/convert/search
+ * Search for YouTube videos based on a query.
+ */
+router.get('/search', async (req, res) => {
+  const { q, limit } = req.query;
+  if (!q) {
+    return res.status(400).json({ error: 'Search query is required' });
+  }
+
+  try {
+    const results = await searchYouTube(q, limit ? parseInt(limit) : 10);
+    res.json({ results });
+  } catch (err) {
+    console.error('[Search] Error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch search results' });
+  }
 });
 
 module.exports = router;

@@ -181,3 +181,9 @@ export async function reorderPlaylistSongs(
     body: JSON.stringify({ order }),
   });
 }
+
+export async function searchYouTube(query: string, limit = 10) {
+  return apiFetch<{ results: import('../types').Song[] }>(
+    `/api/convert/search?q=${encodeURIComponent(query)}&limit=${limit}`
+  );
+}

@@ -21,17 +21,17 @@ type Stage =
   | 'error';
 
 export function AddSongModal() {
-  const [url, setUrl] = useState('');
-  const [stage, setStage] = useState<Stage>('idle');
-  const [progress, setProgress] = useState(0);
-  const [metadata, setMetadata] = useState<ConversionMetadata | null>(null);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [cancelStream, setCancelStream] = useState<(() => void) | null>(null);
-
   const { user } = useAuthStore();
   const { addSong } = useLibraryStore();
-  const { closeAddSongModal } = useUIStore();
+  const { closeAddSongModal, addSongInitialUrl, addSongInitialMetadata } = useUIStore();
   const { playSong } = usePlayerStore();
+
+  const [url, setUrl] = useState(addSongInitialUrl || '');
+  const [stage, setStage] = useState<Stage>(addSongInitialMetadata ? 'showing_ad' : 'idle');
+  const [progress, setProgress] = useState(0);
+  const [metadata, setMetadata] = useState<ConversionMetadata | null>(addSongInitialMetadata || null);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [cancelStream, setCancelStream] = useState<(() => void) | null>(null);
 
   const reset = useCallback(() => {
     setUrl('');

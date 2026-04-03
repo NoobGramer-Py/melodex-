@@ -17,10 +17,16 @@ interface LibraryStore {
   searchQuery: string;
   initialized: boolean;
   lastAuthStatus: boolean | null;
+  recentlyListened: Song[];
+  favoriteArtists: string[];
 
   loadSongs: (isAuthenticated: boolean) => Promise<void>;
   addSong: (song: Partial<Song> & { title: string; storage_path: string; audio_url?: string }, isAuthenticated: boolean) => void;
   deleteSong: (id: string, isAuthenticated: boolean) => Promise<void>;
+  addToRecentlyListened: (song: Song) => void;
+  removeFromRecentlyListened: (id: string) => void;
+  addFavoriteArtist: (artist: string) => void;
+  removeFavoriteArtist: (artist: string) => void;
   setSort: (sort: SortOption) => void;
   setOrder: (order: SortOrder) => void;
   setSearchQuery: (query: string) => void;
@@ -37,6 +43,8 @@ export const useLibraryStore = create<LibraryStore>()(
       searchQuery: '',
       initialized: false,
       lastAuthStatus: null,
+      recentlyListened: [],
+      favoriteArtists: [],
 
       loadSongs: async (isAuthenticated) => {
         if (get().loading) return;
@@ -90,6 +98,32 @@ export const useLibraryStore = create<LibraryStore>()(
         set(state => ({ songs: state.songs.filter(s => s.id !== id) }));
       },
 
+      addToRecentlyListened: (song) => {
+        set(state => {
+          const filtered = state.recentlyListened.filter(s => s.id !== song.id);
+          return { recentlyListened: [song, ...filtered].slice(0, 20) };
+        });
+      },
+
+      removeFromRecentlyListened: (id) => {
+        set(state => ({
+          recentlyListened: state.recentlyListened.filter(s => s.id !== id)
+        }));
+      },
+
+      addFavoriteArtist: (artist) => {
+        set(state => {
+          if (state.favoriteArtists.includes(artist)) return state;
+          return { favoriteArtists: [...state.favoriteArtists, artist] };
+        });
+      },
+
+      removeFavoriteArtist: (artist) => {
+        set(state => ({
+          favoriteArtists: state.favoriteArtists.filter(a => a !== artist)
+        }));
+      },
+
       setSort: (sort) => set({ sort }),
       setOrder: (order) => set({ order }),
       setSearchQuery: (searchQuery) => set({ searchQuery }),
@@ -134,7 +168,9 @@ export const useLibraryStore = create<LibraryStore>()(
         songs: state.songs, 
         sort: state.sort, 
         order: state.order,
-        lastAuthStatus: state.lastAuthStatus 
+        lastAuthStatus: state.lastAuthStatus,
+        recentlyListened: state.recentlyListened,
+        favoriteArtists: state.favoriteArtists
       }),
     }
   )

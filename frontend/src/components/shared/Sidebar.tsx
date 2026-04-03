@@ -7,6 +7,7 @@ import {
   LogOut,
   User,
   Music2,
+  Home,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
@@ -37,6 +38,10 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="px-3 space-y-1">
+        <NavLink to="/" className={navClass}>
+          <Home size={18} />
+          Home
+        </NavLink>
         <NavLink to="/library" className={navClass}>
           <Library size={18} />
           Library
@@ -50,7 +55,7 @@ export function Sidebar() {
       {/* Add Song button */}
       <div className="px-3 mt-4">
         <button
-          onClick={openAddSongModal}
+          onClick={() => openAddSongModal()}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-textSecondary hover:text-text hover:bg-surface transition-colors"
         >
           <PlusCircle size={18} className="text-accent" />

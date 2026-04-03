@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import {
   Play,
   Pause,
@@ -9,6 +10,8 @@ import {
   Volume2,
   VolumeX,
   Mic2,
+  MoreVertical,
+  Download,
 } from 'lucide-react';
 import { usePlayerStore } from '../../store/playerStore';
 import { useUIStore } from '../../store/uiStore';
@@ -35,8 +38,9 @@ export function PlayerBar() {
     toggleShuffle,
     cycleRepeat,
   } = usePlayerStore();
+  const [showOptions, setShowOptions] = useState(false);
 
-  const { toggleLyrics, lyricsOpen } = useUIStore();
+  const { toggleLyrics, lyricsOpen, openAddSongModal } = useUIStore();
 
   if (!currentSong) {
     return (
@@ -57,9 +61,42 @@ export function PlayerBar() {
       {/* Song info */}
       <div className="flex items-center gap-3 w-56 min-w-0 flex-shrink-0 md:flex-initial">
         <Thumbnail src={currentSong.thumbnail_url} alt={currentSong.title} size="sm" />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-text line-clamp-1">{currentSong.title}</p>
           <p className="text-xs text-textMuted line-clamp-1">{currentSong.artist || 'Unknown'}</p>
+        </div>
+
+        <div className="relative">
+          <button 
+            onClick={() => setShowOptions(!showOptions)}
+            className="p-1 text-textMuted hover:text-text transition-colors"
+          >
+            <MoreVertical size={18} />
+          </button>
+
+          {showOptions && (
+            <div className="absolute bottom-full left-0 mb-2 w-48 bg-surface border border-border rounded-xl shadow-2xl py-1 z-[70] animate-in fade-in slide-in-from-bottom-2 duration-200">
+              <button 
+                onClick={() => {
+                  setShowOptions(false);
+                  openAddSongModal(
+                    currentSong.youtube_id ? `https://youtube.com/watch?v=${currentSong.youtube_id}` : '',
+                    {
+                      title: currentSong.title,
+                      artist: currentSong.artist || 'Unknown',
+                      thumbnail_url: currentSong.thumbnail_url,
+                      duration_seconds: currentSong.duration_seconds || 0,
+                      youtube_id: currentSong.youtube_id || ''
+                    }
+                  );
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-text hover:bg-white/10 transition-colors"
+              >
+                <Download size={16} className="text-accent" />
+                Download Song
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

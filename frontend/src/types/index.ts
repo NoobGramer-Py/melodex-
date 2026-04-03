@@ -7,6 +7,7 @@ export interface Song {
   storage_path: string;
   duration_seconds: number | null;
   created_at: string;
+  youtube_id?: string;
   // ephemeral — not stored in DB, generated on demand
   audio_url?: string;
 }

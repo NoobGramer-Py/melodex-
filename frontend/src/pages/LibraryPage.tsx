@@ -77,7 +77,7 @@ export default function LibraryPage() {
             </p>
           </div>
           <button
-            onClick={openAddSongModal}
+            onClick={() => openAddSongModal()}
             className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accentHover text-black text-sm font-medium rounded-full transition-colors"
           >
             <PlusCircle size={16} />
@@ -125,7 +125,7 @@ export default function LibraryPage() {
               <>
                 <p className="text-textSecondary">Your library is empty</p>
                 <button
-                  onClick={openAddSongModal}
+                  onClick={() => openAddSongModal()}
                   className="px-5 py-2.5 bg-accent hover:bg-accentHover text-black text-sm font-medium rounded-full transition-colors"
                 >
                   Add your first song

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Song } from '../types';
 import { fetchSignedUrl } from '../lib/api';
+import { useLibraryStore } from './libraryStore';
 
 // Single shared Audio element — avoids multiple audio instances
 const audio = new Audio();
@@ -102,6 +103,9 @@ export const usePlayerStore = create<PlayerStore>((set, get) => {
           isLoadingAudio: false,
           currentTime: 0,
         });
+
+        // Add to recently listened
+        useLibraryStore.getState().addToRecentlyListened(song);
       } catch (err) {
         console.error('[Player] Failed to play song:', err);
         set({ isLoadingAudio: false });

@@ -15,6 +15,8 @@ interface UIStore {
   lyricsOpen: boolean;
   authModalOpen: boolean;
   addSongModalOpen: boolean;
+  addSongInitialUrl: string;
+  addSongInitialMetadata: any | null;
   guestPromptShown: boolean;
   confirmModal: ConfirmModalState;
 
@@ -22,7 +24,7 @@ interface UIStore {
   setLyricsOpen: (open: boolean) => void;
   openAuthModal: () => void;
   closeAuthModal: () => void;
-  openAddSongModal: () => void;
+  openAddSongModal: (url?: string, metadata?: any) => void;
   closeAddSongModal: () => void;
   setGuestPromptShown: (shown: boolean) => void;
   showConfirm: (state: Omit<ConfirmModalState, 'open'>) => void;
@@ -33,6 +35,8 @@ export const useUIStore = create<UIStore>((set) => ({
   lyricsOpen: false,
   authModalOpen: false,
   addSongModalOpen: false,
+  addSongInitialUrl: '',
+  addSongInitialMetadata: null,
   guestPromptShown: false,
   confirmModal: {
     open: false,
@@ -45,8 +49,10 @@ export const useUIStore = create<UIStore>((set) => ({
   setLyricsOpen: (open) => set({ lyricsOpen: open }),
   openAuthModal: () => set({ authModalOpen: true }),
   closeAuthModal: () => set({ authModalOpen: false }),
-  openAddSongModal: () => set({ addSongModalOpen: true }),
-  closeAddSongModal: () => set({ addSongModalOpen: false }),
+  openAddSongModal: (url = '', metadata = null) => 
+    set({ addSongModalOpen: true, addSongInitialUrl: url, addSongInitialMetadata: metadata }),
+  closeAddSongModal: () => 
+    set({ addSongModalOpen: false, addSongInitialUrl: '', addSongInitialMetadata: null }),
   setGuestPromptShown: (guestPromptShown) => set({ guestPromptShown }),
 
   showConfirm: (confirmModal) => set({ confirmModal: { ...confirmModal, open: true } }),

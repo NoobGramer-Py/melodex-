@@ -3,7 +3,8 @@ import {
   Library, 
   ListMusic, 
   PlusCircle, 
-  User 
+  User,
+  Home
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
@@ -19,6 +20,11 @@ export function BottomNav() {
 
   return (
     <nav className="lg:hidden h-16 border-t border-border bg-[#0d0d0d] flex items-center justify-around px-2 z-50">
+      <NavLink to="/" className={navClass}>
+        <Home size={20} />
+        Home
+      </NavLink>
+
       <NavLink to="/library" className={navClass}>
         <Library size={20} />
         Library
@@ -29,7 +35,7 @@ export function BottomNav() {
         Playlists
       </NavLink>
 
-      <button onClick={openAddSongModal} className="flex flex-col items-center gap-1.5 px-3 py-2 text-[10px] uppercase font-bold tracking-wider text-textMuted hover:text-text">
+      <button onClick={() => openAddSongModal()} className="flex flex-col items-center gap-1.5 px-3 py-2 text-[10px] uppercase font-bold tracking-wider text-textMuted hover:text-text">
         <PlusCircle size={24} className="text-accent" />
         Add
       </button>

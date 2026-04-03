@@ -173,9 +173,50 @@ function cleanupTempFile(filePath) {
   }
 }
 
+/**
+ * Searches for videos on YouTube and returns a list of results.
+ */
+async function searchYouTube(query, limit = 10) {
+  const args = [
+    `ytsearch${limit}:${query}`,
+    '--dump-json',
+    '--no-playlist',
+    '--no-warnings',
+    '--quiet',
+  ];
+
+  try {
+    const { stdout } = await execFileAsync('yt-dlp', args, {
+      timeout: 30000,
+      maxBuffer: 10 * 1024 * 1024,
+    });
+
+    // Each video is a JSON object on its own line
+    return stdout
+      .trim()
+      .split('\n')
+      .filter(line => line.trim())
+      .map(line => {
+        const info = JSON.parse(line);
+        return {
+          title: info.title || 'Unknown Title',
+          artist: info.uploader || info.channel || 'Unknown Artist',
+          thumbnail_url: info.thumbnail || getBestThumbnail(info.thumbnails),
+          duration_seconds: Math.round(info.duration || 0),
+          youtube_id: info.id,
+          url: `https://www.youtube.com/watch?v=${info.id}`,
+        };
+      });
+  } catch (err) {
+    console.error('[Search] yt-dlp search failed:', err.message);
+    throw new Error('Search failed. Please try again.');
+  }
+}
+
 module.exports = {
   validateYouTubeUrl,
   fetchMetadata,
   convertToMp3,
   cleanupTempFile,
+  searchYouTube,
 };
