@@ -7,7 +7,11 @@ const { v4: uuidv4 } = require('uuid');
 const execFileAsync = promisify(execFile);
 
 const TEMP_DIR = process.env.TEMP_DIR || '/tmp/melodex-conversions';
-const MAX_DURATION_SECONDS = 1200; // 20 minutes max — prevents abuse
+const MAX_DURATION_SECONDS = 1200; // 20 minutes max
+
+// Simple in-memory cache for search results
+const searchCache = new Map();
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
 /**
  * Validates that the URL is a YouTube URL and not something dangerous.
@@ -177,22 +181,32 @@ function cleanupTempFile(filePath) {
  * Searches for videos on YouTube and returns a list of results.
  */
 async function searchYouTube(query, limit = 10) {
+  const cacheKey = `${query.toLowerCase()}_${limit}`;
+  const now = Date.now();
+  
+  if (searchCache.has(cacheKey)) {
+    const { timestamp, results } = searchCache.get(cacheKey);
+    if (now - timestamp < CACHE_TTL) {
+      return results;
+    }
+  }
+
   const args = [
-    `ytsearch${limit}:${query} official audio`, // Target music content for better quality
+    `ytsearch${limit}:${query} official audio`,
     '--dump-json',
     '--no-playlist',
     '--no-warnings',
     '--quiet',
+    '--match-filter', 'duration < 600 & !is_live', // Fast filtering for songs, ignore streams
   ];
 
   try {
     const { stdout } = await execFileAsync('yt-dlp', args, {
-      timeout: 30000,
+      timeout: 15000, // Reduced timeout for snappier feedback
       maxBuffer: 10 * 1024 * 1024,
     });
 
-    // Each video is a JSON object on its own line
-    return stdout
+    const results = stdout
       .trim()
       .split('\n')
       .filter(line => line.trim())
@@ -207,8 +221,15 @@ async function searchYouTube(query, limit = 10) {
           url: `https://www.youtube.com/watch?v=${info.id}`,
         };
       });
+
+    searchCache.set(cacheKey, { timestamp: now, results });
+    return results;
   } catch (err) {
     console.error('[Search] yt-dlp search failed:', err.message);
+    // If it's a timeout error but we have stale cache, return it
+    if (err.message.includes('timeout') && searchCache.has(cacheKey)) {
+      return searchCache.get(cacheKey).results;
+    }
     throw new Error('Search failed. Please try again.');
   }
 }
