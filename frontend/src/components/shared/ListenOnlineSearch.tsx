@@ -10,6 +10,7 @@ export function ListenOnlineSearch() {
   const [results, setResults] = useState<Song[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const { playSong } = usePlayerStore();
 
@@ -23,15 +24,16 @@ export function ListenOnlineSearch() {
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const { results } = await searchYouTube(query, 8); // Increased limit slightly
+        const { results } = await searchYouTube(query, 12); // Increased limit for better breadth
         setResults(results);
         setIsOpen(true);
+        setSelectedIndex(-1);
       } catch (err) {
         console.error('Search failed:', err);
       } finally {
         setLoading(false);
       }
-    }, 300); // Reduced debounce for a more 'live' feel
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [query]);
@@ -46,10 +48,27 @@ export function ListenOnlineSearch() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev < results.length - 1 ? prev + 1 : prev));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev > 0 ? prev - 1 : 0));
+    } else if (e.key === 'Enter') {
+      if (selectedIndex >= 0 && results[selectedIndex]) {
+        handleSelect(results[selectedIndex]);
+      }
+    } else if (e.key === 'Escape') {
+      setIsOpen(false);
+    }
+  };
+
   const handleSelect = (song: Song) => {
     playSong(song);
     setIsOpen(false);
     setQuery('');
+    setSelectedIndex(-1);
   };
 
   return (
@@ -61,8 +80,9 @@ export function ListenOnlineSearch() {
           placeholder="Listen Online: Search any song via YouTube..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => query.length > 2 && setIsOpen(true)}
-          className="w-full bg-surface/50 backdrop-blur-xl border border-white/10 rounded-full pl-12 pr-12 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all placeholder:text-textMuted/50"
+          onKeyDown={handleKeyDown}
+          onFocus={() => query.trim().length > 0 && setIsOpen(true)}
+          className="w-full bg-surface/50 backdrop-blur-xl border border-white/10 rounded-full pl-12 pr-12 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all placeholder:text-textMuted/50 shadow-2xl"
         />
         {query && (
           <button 
@@ -77,20 +97,28 @@ export function ListenOnlineSearch() {
       {isOpen && results.length > 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-[#121212] border border-white/10 rounded-2xl shadow-2xl overflow-hidden glass z-[60]">
           <div className="p-2">
-            {results.map((song) => (
+            {results.map((song, index) => (
               <button
                 key={song.youtube_id || song.id}
                 onClick={() => handleSelect(song)}
-                className="w-full flex items-center gap-4 p-3 hover:bg-white/10 rounded-xl transition-colors text-left group/item"
+                className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all text-left group/item ${
+                  selectedIndex === index ? 'bg-white/20 scale-[1.02] shadow-xl' : 'hover:bg-white/10'
+                }`}
               >
-                <div className="relative w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden">
+                <div className="relative w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden ring-1 ring-white/10">
                   <Thumbnail src={song.thumbnail_url} alt={song.title} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/item:opacity-100 flex items-center justify-center transition-opacity">
+                  <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity ${
+                    selectedIndex === index ? 'opacity-100' : 'opacity-0 group-hover/item:opacity-100'
+                  }`}>
                     <Play size={16} fill="white" />
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-text truncate group-hover/item:text-accent">{song.title}</h4>
+                  <h4 className={`font-medium truncate group-hover/item:text-accent transition-colors ${
+                    selectedIndex === index ? 'text-accent' : 'text-text'
+                  }`}>
+                    {song.title}
+                  </h4>
                   <p className="text-sm text-textMuted truncate">{song.artist}</p>
                 </div>
               </button>

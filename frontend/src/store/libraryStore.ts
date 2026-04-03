@@ -19,12 +19,14 @@ interface LibraryStore {
   lastAuthStatus: boolean | null;
   recentlyListened: Song[];
   favoriteArtists: Artist[];
+  blacklistedRecommendations: string[];
 
   loadSongs: (isAuthenticated: boolean) => Promise<void>;
   addSong: (song: Partial<Song> & { title: string; storage_path: string; audio_url?: string }, isAuthenticated: boolean) => void;
   deleteSong: (id: string, isAuthenticated: boolean) => Promise<void>;
   addToRecentlyListened: (song: Song) => void;
   removeFromRecentlyListened: (id: string) => void;
+  blacklistRecommendation: (id: string) => void;
   addFavoriteArtist: (artist: Artist) => void;
   removeFavoriteArtist: (name: string) => void;
   setSort: (sort: SortOption) => void;
@@ -45,6 +47,7 @@ export const useLibraryStore = create<LibraryStore>()(
       lastAuthStatus: null,
       recentlyListened: [],
       favoriteArtists: [],
+      blacklistedRecommendations: [],
 
       loadSongs: async (isAuthenticated) => {
         if (get().loading) return;
@@ -111,6 +114,12 @@ export const useLibraryStore = create<LibraryStore>()(
         }));
       },
 
+      blacklistRecommendation: (id) => {
+        set(state => ({
+          blacklistedRecommendations: [...state.blacklistedRecommendations, id]
+        }));
+      },
+
       addFavoriteArtist: (artist) => {
         set(state => {
           if (state.favoriteArtists.some(a => a.name === artist.name)) return state;
@@ -170,7 +179,8 @@ export const useLibraryStore = create<LibraryStore>()(
         order: state.order,
         lastAuthStatus: state.lastAuthStatus,
         recentlyListened: state.recentlyListened,
-        favoriteArtists: state.favoriteArtists
+        favoriteArtists: state.favoriteArtists,
+        blacklistedRecommendations: state.blacklistedRecommendations
       }),
     }
   )

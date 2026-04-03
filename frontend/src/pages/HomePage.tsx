@@ -14,13 +14,17 @@ export default function HomePage() {
     songs,
     recentlyListened,
     favoriteArtists,
+    blacklistedRecommendations,
     loadSongs,
+    deleteSong,
     removeFromRecentlyListened,
+    blacklistRecommendation,
     addFavoriteArtist,
     removeFavoriteArtist,
   } = useLibraryStore();
   const { playSong } = usePlayerStore();
   const [showAddArtist, setShowAddArtist] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<{ id: string; x: number; y: number; section: string } | null>(null);
 
   useEffect(() => {
     loadSongs(!!user);
@@ -28,14 +32,33 @@ export default function HomePage() {
 
   const likedSongs = songs.slice(0, 10);
   
-  // Basic recommendation logic: prefer favorite artists, else random
-  const recommendations = [...songs].sort((a, b) => {
-    const aFav = favoriteArtists.some(fa => a.artist?.toLowerCase().includes(fa.name.toLowerCase()));
-    const bFav = favoriteArtists.some(fa => b.artist?.toLowerCase().includes(fa.name.toLowerCase()));
-    if (aFav && !bFav) return -1;
-    if (!aFav && bFav) return 1;
-    return Math.random() - 0.5;
-  }).slice(0, 10);
+  // Basic recommendation logic: prefer favorite artists, else random, exclude blacklisted
+  const recommendations = songs
+    .filter(s => !blacklistedRecommendations.includes(s.id))
+    .sort((a, b) => {
+      const aFav = favoriteArtists.some(fa => a.artist?.toLowerCase().includes(fa.name.toLowerCase()));
+      const bFav = favoriteArtists.some(fa => b.artist?.toLowerCase().includes(fa.name.toLowerCase()));
+      if (aFav && !bFav) return -1;
+      if (!aFav && bFav) return 1;
+      return Math.random() - 0.5;
+    })
+    .slice(0, 10);
+
+  const handleMenuClick = (e: React.MouseEvent, songId: string, section: string) => {
+    e.stopPropagation();
+    setActiveMenu({ id: songId, x: e.clientX, y: e.clientY, section });
+  };
+
+  const handleRemove = (id: string, section: string) => {
+    if (section === 'liked') {
+      deleteSong(id, !!user);
+    } else if (section === 'recent') {
+      removeFromRecentlyListened(id);
+    } else if (section === 'recommended') {
+      blacklistRecommendation(id);
+    }
+    setActiveMenu(null);
+  };
 
   const Section = ({ title, icon: Icon, children, action }: { title: string; icon: any; children: React.ReactNode; action?: React.ReactNode }) => (
     <div className="mb-12">
@@ -71,7 +94,7 @@ export default function HomePage() {
         {likedSongs.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {likedSongs.map(song => (
-              <SongCard key={song.id} song={song} queue={likedSongs} />
+              <SongCard key={song.id} song={song} queue={likedSongs} onMenuClick={(e) => handleMenuClick(e, song.id, 'liked')} />
             ))}
           </div>
         ) : (
@@ -84,19 +107,7 @@ export default function HomePage() {
         {recentlyListened.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {recentlyListened.map(song => (
-              <div key={song.id} className="relative group">
-                <SongCard song={song} />
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeFromRecentlyListened(song.id);
-                  }}
-                  className="absolute top-2 right-2 p-2 bg-red-500/20 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/40"
-                  title="Remove from recent"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
+              <SongCard key={song.id} song={song} onMenuClick={(e) => handleMenuClick(e, song.id, 'recent')} />
             ))}
           </div>
         ) : (
@@ -109,13 +120,34 @@ export default function HomePage() {
         {recommendations.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {recommendations.map(song => (
-              <SongCard key={song.id} song={song} />
+              <SongCard key={song.id} song={song} onMenuClick={(e) => handleMenuClick(e, song.id, 'recommended')} />
             ))}
           </div>
         ) : (
           <EmptyState message="Add more songs to your library to get recommendations." icon={Sparkles} />
         )}
       </Section>
+
+      {/* Context Menu Overlay */}
+      {activeMenu && (
+        <div className="fixed inset-0 z-[100]" onClick={() => setActiveMenu(null)}>
+          <div 
+            className="absolute bg-surface border border-white/10 rounded-xl shadow-2xl py-1 min-w-[160px] animate-in fade-in zoom-in-95 duration-100"
+            style={{ 
+              top: Math.min(window.innerHeight - 60, activeMenu.y), 
+              left: Math.min(window.innerWidth - 170, activeMenu.x) 
+            }}
+          >
+            <button 
+              onClick={() => handleRemove(activeMenu.id, activeMenu.section)}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-white/5 transition-colors"
+            >
+              <Trash2 size={16} />
+              Remove
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Favourite Artists */}
       <Section 
