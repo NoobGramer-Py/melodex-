@@ -125,9 +125,25 @@ export async function fetchSongs(sort = 'created_at', order = 'desc') {
   );
 }
 
+export async function createSong(song: Partial<import('../types').Song>) {
+  return apiFetch<{ song: import('../types').Song }>('/api/songs', { 
+    method: 'POST',
+    body: JSON.stringify(song)
+  });
+}
+
+export async function updateSong(id: string, updates: Partial<import('../types').Song>) {
+  return apiFetch<{ song: import('../types').Song }>(`/api/songs/${id}`, { 
+    method: 'PATCH',
+    body: JSON.stringify(updates)
+  });
+}
+
+
 export async function deleteSong(id: string) {
   return apiFetch<{ success: boolean }>(`/api/songs/${id}`, { method: 'DELETE' });
 }
+
 
 export async function fetchPlaylists() {
   return apiFetch<{ playlists: import('../types').Playlist[] }>('/api/playlists');

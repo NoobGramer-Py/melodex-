@@ -10,7 +10,9 @@ export interface Song {
   youtube_id?: string;
   // ephemeral — not stored in DB, generated on demand
   audio_url?: string;
+  is_liked?: boolean;
 }
+
 
 export interface Playlist {
   id: string;

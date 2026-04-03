@@ -3,10 +3,12 @@ import { Play, Plus, Trash2, Heart, Music, Star, Search, Sparkles, UserPlus } fr
 import { useAuthStore } from '../store/authStore';
 import { useLibraryStore } from '../store/libraryStore';
 import { usePlayerStore } from '../store/playerStore';
+import { usePlaylistStore } from '../store/playlistStore';
 import { SongCard } from '../components/shared/SongCard';
 import { ListenOnlineSearch } from '../components/shared/ListenOnlineSearch';
 import { ArtistSearch } from '../components/shared/ArtistSearch';
 import type { Song } from '../types';
+import { ChevronRight } from 'lucide-react';
 
 export default function HomePage() {
   const { user } = useAuthStore();
@@ -21,16 +23,22 @@ export default function HomePage() {
     blacklistRecommendation,
     addFavoriteArtist,
     removeFavoriteArtist,
+    toggleLikeSong,
   } = useLibraryStore();
+
   const { playSong } = usePlayerStore();
+  const { playlists, addSongToPlaylist, loadPlaylists } = usePlaylistStore();
   const [showAddArtist, setShowAddArtist] = useState(false);
   const [activeMenu, setActiveMenu] = useState<{ id: string; x: number; y: number; section: string } | null>(null);
 
   useEffect(() => {
     loadSongs(!!user);
-  }, [user, loadSongs]);
+    loadPlaylists(!!user);
+  }, [user, loadSongs, loadPlaylists]);
 
-  const likedSongs = songs.slice(0, 10);
+
+  const likedSongs = songs.filter(s => s.is_liked);
+
   
   // Basic recommendation logic: prefer favorite artists, else random, exclude blacklisted
   const recommendations = songs
@@ -132,22 +140,93 @@ export default function HomePage() {
       {activeMenu && (
         <div className="fixed inset-0 z-[100]" onClick={() => setActiveMenu(null)}>
           <div 
-            className="absolute bg-surface border border-white/10 rounded-xl shadow-2xl py-1 min-w-[160px] animate-in fade-in zoom-in-95 duration-100"
+            className="absolute bg-surface/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl py-1.5 min-w-[200px] animate-in fade-in zoom-in-95 duration-100"
             style={{ 
-              top: Math.min(window.innerHeight - 60, activeMenu.y), 
-              left: Math.min(window.innerWidth - 170, activeMenu.x) 
+              top: Math.min(window.innerHeight - 300, activeMenu.y), 
+              left: Math.min(window.innerWidth - 210, activeMenu.x) 
             }}
+            onClick={(e) => e.stopPropagation()}
           >
+            {(() => {
+               const s = songs.find(s => s.id === activeMenu.id) || recentlyListened.find(s => s.id === activeMenu.id);
+               if (!s) return null;
+               const isLiked = s?.is_liked;
+               return (
+                 <>
+                   <div className="px-4 py-2 text-[10px] uppercase tracking-widest text-textMuted font-bold border-b border-white/5 mb-1.5">
+                     Options
+                   </div>
+
+                   {/* Like Option */}
+                   <button 
+                    onClick={() => {
+                      toggleLikeSong(s, !!user);
+                      setActiveMenu(null);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-text hover:bg-white/10 transition-colors"
+                   >
+                     <div className={`w-6 h-6 ${isLiked ? 'bg-accent/10 text-accent' : 'bg-white/10 text-textMuted'} rounded-lg flex items-center justify-center`}>
+                       <Heart size={14} fill={isLiked ? 'currentColor' : 'none'} />
+                     </div>
+                     {isLiked ? 'Unlike' : 'Like'}
+                   </button>
+                 </>
+               );
+            })()}
+
+
+            {/* Add to Playlist Submenu */}
+
+            <div className="relative group/playlist">
+              <button 
+                className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-text hover:bg-white/10 transition-colors"
+                onMouseEnter={() => {/* Pre-fetch playlist songs if needed */}}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 bg-accent/10 rounded-lg flex items-center justify-center text-accent">
+                    <Plus size={14} />
+                  </div>
+                  Add to Playlist
+                </div>
+                <ChevronRight size={14} className="text-textMuted group-hover/playlist:translate-x-0.5 transition-transform" />
+              </button>
+              
+              <div className="absolute left-full top-0 ml-1.5 hidden group-hover/playlist:block bg-surface/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl py-1.5 min-w-[200px] max-h-[300px] overflow-y-auto custom-scrollbar animate-in slide-in-from-left-2 duration-150">
+                {playlists.length > 0 ? (
+                  playlists.map(p => (
+                    <button 
+                      key={p.id}
+                      onClick={() => {
+                        addSongToPlaylist(p.id, activeMenu.id, !!user);
+                        setActiveMenu(null);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-textMuted hover:text-text hover:bg-white/5 transition-colors flex items-center gap-3"
+                    >
+                      <Music size={14} className="opacity-50" />
+                      <span className="truncate">{p.name}</span>
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-4 py-6 text-center text-textMuted text-xs italic">
+                    No playlists found. Create one first!
+                  </div>
+                )}
+              </div>
+            </div>
+
             <button 
               onClick={() => handleRemove(activeMenu.id, activeMenu.section)}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-white/5 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-white/10 transition-colors mt-1 border-t border-white/5 pt-2"
             >
-              <Trash2 size={16} />
+              <div className="w-6 h-6 bg-red-500/10 rounded-lg flex items-center justify-center">
+                <Trash2 size={14} />
+              </div>
               Remove
             </button>
           </div>
         </div>
       )}
+
 
       {/* Favourite Artists */}
       <Section 

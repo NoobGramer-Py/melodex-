@@ -1,8 +1,11 @@
-import { Play, MoreHorizontal, Clock } from 'lucide-react';
+import { Play, MoreHorizontal, Clock, Heart } from 'lucide-react';
 import type { Song } from '../../types';
 import { Thumbnail } from './Thumbnail';
 import { formatDuration } from '../../lib/utils';
 import { usePlayerStore } from '../../store/playerStore';
+import { useLibraryStore } from '../../store/libraryStore';
+import { useAuthStore } from '../../store/authStore';
+
 
 interface SongCardProps {
   song: Song;
@@ -12,12 +15,23 @@ interface SongCardProps {
 
 export function SongCard({ song, onMenuClick, queue }: SongCardProps) {
   const { currentSong, isPlaying, playSong, preResolve } = usePlayerStore();
+  const { toggleLikeSong } = useLibraryStore();
+  const { user } = useAuthStore();
+  
   const isCurrent = currentSong?.id === song.id;
+  const isLiked = song.is_liked;
 
   const handlePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
     playSong(song, queue);
   };
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleLikeSong(song, !!user);
+  };
+
+
 
   const handleMouseEnter = () => {
     // Only pre-resolve online songs to save backend resources
@@ -67,7 +81,17 @@ export function SongCard({ song, onMenuClick, queue }: SongCardProps) {
         </p>
       </div>
 
-      <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute top-6 left-6 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        <button 
+          onClick={handleLike}
+          className={`p-1.5 bg-black/60 rounded-full transition-colors ${isLiked ? 'text-red-500' : 'text-white hover:text-red-400'}`}
+        >
+          <Heart size={18} fill={isLiked ? 'currentColor' : 'none'} />
+        </button>
+      </div>
+
+      <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+
         <button 
           onClick={(e) => {
             e.stopPropagation();

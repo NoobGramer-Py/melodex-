@@ -1,9 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
-import { MoreHorizontal, Play, Trash2, ListPlus, Pause } from 'lucide-react';
+import { MoreHorizontal, Play, Trash2, ListPlus, Pause, Heart } from 'lucide-react';
+
 import type { Song, Playlist } from '../../types';
 import { Thumbnail } from '../shared/Thumbnail';
 import { formatDuration, formatDate } from '../../lib/utils';
 import { usePlayerStore } from '../../store/playerStore';
+import { useLibraryStore } from '../../store/libraryStore';
+import { useAuthStore } from '../../store/authStore';
+
 
 interface SongRowProps {
   song: Song;
@@ -25,11 +29,22 @@ export function SongRow({
   showDateAdded = false,
 }: SongRowProps) {
   const { currentSong, isPlaying, playSong, togglePlay } = usePlayerStore();
+  const { toggleLikeSong } = useLibraryStore();
+  const { user } = useAuthStore();
+  
   const [menuOpen, setMenuOpen] = useState(false);
   const [playlistMenuOpen, setPlaylistMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const isCurrentSong = currentSong?.id === song.id;
+  const isLiked = song.is_liked;
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleLikeSong(song, !!user);
+  };
+
+
 
   // Close menu on outside click
   useEffect(() => {
@@ -98,9 +113,18 @@ export function SongRow({
       )}
 
       {/* Duration */}
-      <span className="text-xs text-textMuted font-mono tabular-nums w-10 text-right">
+      <span className="text-xs text-textMuted font-mono tabular-nums w-10 text-right mr-2">
         {formatDuration(song.duration_seconds)}
       </span>
+
+      {/* Like button */}
+      <button 
+        onClick={handleLike}
+        className={`transition-colors p-1 rounded-full ${isLiked ? 'text-accent opacity-100' : 'text-textMuted hover:text-text opacity-0 group-hover:opacity-100'}`}
+      >
+        <Heart size={16} fill={isLiked ? 'currentColor' : 'none'} />
+      </button>
+
 
       {/* Context menu */}
       <div className="relative" ref={menuRef}>
@@ -120,6 +144,15 @@ export function SongRow({
               <Play size={14} />
               Play
             </button>
+
+            <button
+              onClick={(e) => { handleLike(e); setMenuOpen(false); }}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-text hover:bg-surfaceHover transition-colors text-left"
+            >
+              <Heart size={14} fill={isLiked ? 'currentColor' : 'none'} className={isLiked ? 'text-accent' : ''} />
+              {isLiked ? 'Unlike' : 'Like'}
+            </button>
+
 
             {playlists.length > 0 && onAddToPlaylist && (
               <div className="relative">

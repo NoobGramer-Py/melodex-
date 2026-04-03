@@ -11,7 +11,9 @@ import {
   GripVertical,
   Trash2,
   Plus,
+  Heart,
 } from 'lucide-react';
+
 import {
   DndContext,
   closestCenter,
@@ -31,7 +33,10 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { usePlaylists } from '../hooks/usePlaylists';
 import { usePlayerStore } from '../store/playerStore';
+import { useLibraryStore } from '../store/libraryStore';
+import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
+
 import { PlaylistModal } from '../components/playlist/PlaylistModal';
 import { AddSongToPlaylistModal } from '../components/playlist/AddSongToPlaylistModal';
 import { Thumbnail } from '../components/shared/Thumbnail';
@@ -46,6 +51,8 @@ function SortableSongRow({
   onRemove,
   onPlay,
   isCurrentSong,
+  toggleLikeSong,
+  user,
 }: {
   song: Song;
   index: number;
@@ -53,7 +60,12 @@ function SortableSongRow({
   onRemove: (id: string) => void;
   onPlay: (song: Song) => void;
   isCurrentSong: boolean;
+  toggleLikeSong: (song: Song, isAuthenticated: boolean) => Promise<void>;
+  user: any;
 }) {
+
+
+
   const {
     attributes,
     listeners,
@@ -109,6 +121,15 @@ function SortableSongRow({
         {formatDuration(song.duration_seconds)}
       </span>
 
+      <button 
+        onClick={(e) => { e.stopPropagation(); toggleLikeSong(song, !!user); }}
+        className={`transition-colors p-1 rounded-full ${song.is_liked ? 'text-accent opacity-100' : 'text-textMuted hover:text-text opacity-0 group-hover:opacity-100'}`}
+      >
+
+        <Heart size={16} fill={song.is_liked ? 'currentColor' : 'none'} />
+      </button>
+
+
       {isOwner && (
         <button
           onClick={() => onRemove(song.id)}
@@ -128,7 +149,10 @@ export default function PlaylistDetailPage() {
   const { playSong, toggleShuffle, shuffle } = usePlayerStore();
   const { showConfirm } = useUIStore();
 
+  const { user } = useAuthStore();
+  const { toggleLikeSong } = useLibraryStore();
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
+
   const [songs, setSongs] = useState<Song[]>([]);
   const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -366,7 +390,10 @@ export default function PlaylistDetailPage() {
                   onRemove={handleRemoveSong}
                   onPlay={(s) => playSong(s, songs)}
                   isCurrentSong={currentSong?.id === song.id}
+                  toggleLikeSong={toggleLikeSong}
+                  user={user}
                 />
+
               ))}
             </SortableContext>
           </DndContext>

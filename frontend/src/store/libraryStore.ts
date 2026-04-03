@@ -24,7 +24,9 @@ interface LibraryStore {
   loadSongs: (isAuthenticated: boolean) => Promise<void>;
   addSong: (song: Partial<Song> & { title: string; storage_path: string; audio_url?: string }, isAuthenticated: boolean) => void;
   deleteSong: (id: string, isAuthenticated: boolean) => Promise<void>;
+  toggleLikeSong: (song: Song, isAuthenticated: boolean) => Promise<void>;
   addToRecentlyListened: (song: Song) => void;
+
   removeFromRecentlyListened: (id: string) => void;
   blacklistRecommendation: (id: string) => void;
   addFavoriteArtist: (artist: Artist) => void;
@@ -83,7 +85,10 @@ export const useLibraryStore = create<LibraryStore>()(
           duration_seconds: songData.duration_seconds || null,
           created_at: new Date().toISOString(),
           audio_url: songData.audio_url,
+          youtube_id: songData.youtube_id,
+          is_liked: songData.is_liked || false,
         };
+
 
         if (!isAuthenticated) {
           addGuestSong(song as GuestSong);
@@ -100,6 +105,59 @@ export const useLibraryStore = create<LibraryStore>()(
         }
         set(state => ({ songs: state.songs.filter(s => s.id !== id) }));
       },
+
+      toggleLikeSong: async (targetSong, isAuthenticated) => {
+        const existingSong = get().songs.find(s => s.id === targetSong.id);
+        const newStatus = existingSong ? !existingSong.is_liked : true;
+
+        if (!existingSong) {
+          // Add to library first if it's a new song being liked
+          const newSong: Song = {
+            ...targetSong,
+            is_liked: true,
+            created_at: new Date().toISOString()
+          };
+          
+          set(state => ({
+            songs: [newSong, ...state.songs]
+          }));
+
+          if (isAuthenticated) {
+            try {
+              const { createSong } = await import('../lib/api');
+              // Persist to DB for authenticated users
+              await createSong({
+                ...targetSong,
+                is_liked: true
+              });
+            } catch (err) {
+              console.error('[Library] Failed to create song in DB via like:', err);
+            }
+          }
+          return;
+        }
+
+        // Standard toggle for existing song
+        set(state => ({
+          songs: state.songs.map(s => s.id === targetSong.id ? { ...s, is_liked: newStatus } : s),
+          recentlyListened: state.recentlyListened.map(s => s.id === targetSong.id ? { ...s, is_liked: newStatus } : s)
+        }));
+
+        if (isAuthenticated) {
+          try {
+            const { updateSong } = await import('../lib/api');
+            await updateSong(targetSong.id, { is_liked: newStatus });
+          } catch (err) {
+            console.error('[Library] Failed to toggle like in DB:', err);
+            // Revert on failure
+            set(state => ({
+              songs: state.songs.map(s => s.id === targetSong.id ? { ...s, is_liked: !newStatus } : s)
+            }));
+          }
+        }
+      },
+
+
 
       addToRecentlyListened: (song) => {
         set(state => {
