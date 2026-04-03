@@ -1,0 +1,17 @@
+A:\melodex\backend\node_modules\@supabase\supabase-js\dist\index.cjs:146
+	if (!trimmedUrl) throw new Error("supabaseUrl is required.");
+	                 ^
+
+Error: supabaseUrl is required.
+    at validateSupabaseUrl (A:\melodex\backend\node_modules\@supabase\supabase-js\dist\index.cjs:146:25)
+    at new SupabaseClient (A:\melodex\backend\node_modules\@supabase\supabase-js\dist\index.cjs:362:19)
+    at createClient (A:\melodex\backend\node_modules\@supabase\supabase-js\dist\index.cjs:582:9)
+    at Object.<anonymous> (A:\melodex\backend\src\lib\supabase.js:4:18)
+    at Module._compile (node:internal/modules/cjs/loader:1688:14)
+    at Object..js (node:internal/modules/cjs/loader:1820:10)
+    at Module.load (node:internal/modules/cjs/loader:1423:32)
+    at Function._load (node:internal/modules/cjs/loader:1246:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+
+Node.js v22.18.0
