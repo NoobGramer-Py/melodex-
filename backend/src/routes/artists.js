@@ -8,12 +8,9 @@ const { searchArtists } = require('../services/spotify');
  */
 router.get('/search', async (req, res) => {
   const { q } = req.query;
-  if (!q) {
-    return res.status(400).json({ error: 'Query is required' });
-  }
 
   try {
-    const results = await searchArtists(q);
+    const results = await searchArtists(q || '');
     res.json({ results });
   } catch (err) {
     console.error('[Artists] Error:', err.message);

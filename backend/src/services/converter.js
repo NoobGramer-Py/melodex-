@@ -178,7 +178,7 @@ function cleanupTempFile(filePath) {
  */
 async function searchYouTube(query, limit = 10) {
   const args = [
-    `ytsearch${limit}:${query}`,
+    `ytsearch${limit}:${query} official audio`, // Target music content for better quality
     '--dump-json',
     '--no-playlist',
     '--no-warnings',
