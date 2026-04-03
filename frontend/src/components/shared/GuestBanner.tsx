@@ -17,8 +17,8 @@ export function GuestBanner() {
   return (
     <div className="flex-shrink-0 bg-accent/10 border-b border-accent/20 px-4 py-2.5 flex items-center justify-between gap-4">
       <p className="text-sm text-text">
-        <span className="font-medium">You're browsing as a guest.</span>{' '}
-        <span className="text-textSecondary">Sign in to sync your music across all your devices.</span>
+        <span className="font-medium">Guest mode.</span>{' '}
+        <span className="text-textSecondary hidden sm:inline">Sign in to sync your music across all devices.</span>
       </p>
       <div className="flex items-center gap-2 flex-shrink-0">
         <button

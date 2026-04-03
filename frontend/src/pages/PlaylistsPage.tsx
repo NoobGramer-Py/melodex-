@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { usePlaylists } from '../hooks/usePlaylists';
+import { useUIStore } from '../store/uiStore';
 import { PlaylistCard } from '../components/playlist/PlaylistCard';
 import { PlaylistModal } from '../components/playlist/PlaylistModal';
 import { GridCardSkeleton } from '../components/shared/Skeleton';
@@ -13,6 +14,7 @@ export default function PlaylistsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editingPlaylist, setEditingPlaylist] = useState<Playlist | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const { showConfirm } = useUIStore();
 
   const handleCreate = async (name: string, isPublic: boolean) => {
     await createPlaylist(name, isPublic);
@@ -26,9 +28,15 @@ export default function PlaylistsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Delete this playlist? This cannot be undone.')) {
-      await deletePlaylist(id);
-    }
+    showConfirm({
+      title: 'Delete Playlist?',
+      message: 'This will permanently remove the playlist and all its contents. This cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+      onConfirm: async () => {
+        await deletePlaylist(id);
+      },
+    });
   };
 
   const handleCopyLink = async (id: string) => {

@@ -6,6 +6,8 @@ import { LyricsPanel } from './components/lyrics/LyricsPanel';
 import { AuthModal } from './components/auth/AuthModal';
 import { AddSongModal } from './components/shared/AddSongModal';
 import { GuestBanner } from './components/shared/GuestBanner';
+import { BottomNav } from './components/shared/BottomNav';
+import { ConfirmModal } from './components/shared/ConfirmModal';
 import { useAuthStore } from './store/authStore';
 import { useUIStore } from './store/uiStore';
 import { hasSeenGuestPrompt } from './lib/guestStorage';
@@ -26,22 +28,29 @@ function AppLayout() {
       {!user && <GuestBanner />}
 
       {/* Main area: sidebar + content + lyrics */}
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+      <div className="flex flex-1 overflow-hidden relative">
+        <div className="hidden lg:flex flex-shrink-0">
+          <Sidebar />
+        </div>
 
         <main className="flex-1 overflow-hidden flex flex-col bg-background">
           <Outlet />
         </main>
 
-        <LyricsPanel />
+        <div className="hidden xl:flex flex-shrink-0">
+          <LyricsPanel />
+        </div>
       </div>
 
       {/* Persistent player */}
       <PlayerBar />
 
+      <BottomNav />
+
       {/* Modals */}
       {authModalOpen && <AuthModal />}
       {addSongModalOpen && <AddSongModal />}
+      <ConfirmModal />
     </div>
   );
 }

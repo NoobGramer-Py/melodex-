@@ -22,10 +22,8 @@ export default function LibraryPage() {
     setSearchQuery,
     getFilteredSongs,
   } = useLibraryStore();
-  const { openAddSongModal } = useUIStore();
+  const { openAddSongModal, showConfirm } = useUIStore();
   const { playlists, addSongToPlaylist } = usePlaylists();
-
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
     loadSongs(!!user);
@@ -43,13 +41,16 @@ export default function LibraryPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (deleteConfirm === id) {
-      await deleteSong(id, !!user);
-      setDeleteConfirm(null);
-    } else {
-      setDeleteConfirm(id);
-      setTimeout(() => setDeleteConfirm(null), 3000);
-    }
+    const song = songs.find(s => s.id === id);
+    showConfirm({
+      title: 'Remove Song?',
+      message: `Are you sure you want to remove "${song?.title}" from your library?`,
+      confirmLabel: 'Remove',
+      destructive: true,
+      onConfirm: async () => {
+        await deleteSong(id, !!user);
+      },
+    });
   };
 
   const SortButton = ({ label, value }: { label: string; value: SortOption }) => (

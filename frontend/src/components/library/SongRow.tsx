@@ -11,7 +11,7 @@ interface SongRowProps {
   queue?: Song[];
   playlists?: Playlist[];
   onDelete?: (id: string) => void;
-  onAddToPlaylist?: (songId: string, playlistId: string) => void;
+  onAddToPlaylist?: (playlistId: string, songId: string) => void;
   showDateAdded?: boolean;
 }
 
@@ -129,7 +129,7 @@ export function SongRow({
                   className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-text hover:bg-surfaceHover transition-colors text-left"
                 >
                   <ListPlus size={14} />
-                  Add to playlist
+                  add song in the playlist
                 </button>
 
                 {playlistMenuOpen && (
@@ -141,7 +141,7 @@ export function SongRow({
                     {playlists.map(pl => (
                       <button
                         key={pl.id}
-                        onClick={() => { onAddToPlaylist(song.id, pl.id); setMenuOpen(false); setPlaylistMenuOpen(false); }}
+                        onClick={() => { onAddToPlaylist(pl.id, song.id); setMenuOpen(false); setPlaylistMenuOpen(false); }}
                         className="w-full text-left px-4 py-2.5 text-sm text-text hover:bg-surfaceHover transition-colors truncate"
                       >
                         {pl.name}

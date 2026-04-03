@@ -6,7 +6,6 @@ interface AuthStore {
   user: AuthUser | null;
   loading: boolean;
   initialized: boolean;
-  signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -20,30 +19,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   initialize: async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    set({
-      user: session?.user as AuthUser | null ?? null,
-      initialized: true,
-    });
-
-    // Listen for auth state changes
+    set({ user: session?.user as AuthUser | null ?? null, initialized: true });
     supabase.auth.onAuthStateChange((_event, session) => {
       set({ user: session?.user as AuthUser | null ?? null });
     });
-  },
-
-  signInWithGoogle: async () => {
-    set({ loading: true });
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-      if (error) throw error;
-    } finally {
-      set({ loading: false });
-    }
   },
 
   signInWithEmail: async (email, password) => {

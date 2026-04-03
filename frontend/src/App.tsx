@@ -7,13 +7,21 @@ import PlaylistDetailPage from './pages/PlaylistDetailPage';
 import PublicPlaylistPage from './pages/PublicPlaylistPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import { useAuthStore } from './store/authStore';
+import { usePlaylistStore } from './store/playlistStore';
 
 function AppRoutes() {
-  const { initialize, initialized } = useAuthStore();
+  const { user, initialize, initialized } = useAuthStore();
+  const { loadPlaylists } = usePlaylistStore();
 
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  useEffect(() => {
+    if (initialized) {
+      loadPlaylists(!!user);
+    }
+  }, [initialized, user, loadPlaylists]);
 
   if (!initialized) {
     return (

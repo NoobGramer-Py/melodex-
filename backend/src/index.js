@@ -11,7 +11,7 @@ const songsRouter = require('./routes/songs');
 const playlistsRouter = require('./routes/playlists');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 5173;
 
 // Ensure temp directory exists
 const tempDir = process.env.TEMP_DIR || '/tmp/melodex-conversions';

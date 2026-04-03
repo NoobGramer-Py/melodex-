@@ -10,6 +10,7 @@ import {
   Pencil,
   GripVertical,
   Trash2,
+  Plus,
 } from 'lucide-react';
 import {
   DndContext,
@@ -30,7 +31,9 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { usePlaylists } from '../hooks/usePlaylists';
 import { usePlayerStore } from '../store/playerStore';
+import { useUIStore } from '../store/uiStore';
 import { PlaylistModal } from '../components/playlist/PlaylistModal';
+import { AddSongToPlaylistModal } from '../components/playlist/AddSongToPlaylistModal';
 import { Thumbnail } from '../components/shared/Thumbnail';
 import { SongCardSkeleton } from '../components/shared/Skeleton';
 import { formatDuration, totalDuration } from '../lib/utils';
@@ -121,14 +124,16 @@ function SortableSongRow({
 export default function PlaylistDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getPlaylistWithSongs, updatePlaylist, removeSongFromPlaylist, reorderSongs } = usePlaylists();
+  const { getPlaylistWithSongs, updatePlaylist, removeSongFromPlaylist, reorderSongs, addSongToPlaylist, deletePlaylist } = usePlaylists();
   const { playSong, toggleShuffle, shuffle } = usePlayerStore();
+  const { showConfirm } = useUIStore();
 
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [songs, setSongs] = useState<Song[]>([]);
   const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
+  const [addSongOpen, setAddSongOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const { currentSong } = usePlayerStore();
 
@@ -142,7 +147,7 @@ export default function PlaylistDetailPage() {
     setLoading(true);
     const result = await getPlaylistWithSongs(id);
     if (!result) {
-      navigate('/playlists');
+      if (id) navigate('/playlists');
       return;
     }
     setPlaylist(result.playlist);
@@ -150,6 +155,14 @@ export default function PlaylistDetailPage() {
     setIsOwner(result.is_owner);
     setLoading(false);
   }, [id, getPlaylistWithSongs, navigate]);
+
+  const handleAddSong = async (songId: string) => {
+    if (!id) return;
+    await addSongToPlaylist(id, songId);
+    // Reload songs locally after adding
+    const result = await getPlaylistWithSongs(id);
+    if (result) setSongs(result.songs);
+  };
 
   useEffect(() => { load(); }, [load]);
 
@@ -167,8 +180,30 @@ export default function PlaylistDetailPage() {
   };
 
   const handleRemoveSong = async (songId: string) => {
-    await removeSongFromPlaylist(id!, songId);
-    setSongs(prev => prev.filter(s => s.id !== songId));
+    const song = songs.find(s => s.id === songId);
+    showConfirm({
+      title: 'Remove from Playlist?',
+      message: `Remove "${song?.title}" from this playlist?`,
+      confirmLabel: 'Remove',
+      destructive: true,
+      onConfirm: async () => {
+        await removeSongFromPlaylist(id!, songId);
+        setSongs(prev => prev.filter(s => s.id !== songId));
+      },
+    });
+  };
+
+  const handleDeletePlaylist = async () => {
+    showConfirm({
+      title: 'Delete Playlist?',
+      message: `Are you sure you want to delete "${playlist?.name}"? This action cannot be undone.`,
+      confirmLabel: 'Delete',
+      destructive: true,
+      onConfirm: async () => {
+        await deletePlaylist(id!);
+        navigate('/playlists');
+      },
+    });
   };
 
   const handleEdit = async (name: string, isPublic: boolean) => {
@@ -218,68 +253,86 @@ export default function PlaylistDetailPage() {
           Back to playlists
         </button>
 
-        <div className="flex items-end gap-5">
+        <div className="flex flex-col md:flex-row items-center md:items-end gap-5">
           {/* Cover */}
-          <div className="w-36 h-36 flex-shrink-0 bg-surface rounded-xl flex items-center justify-center overflow-hidden">
+          <div className="w-44 h-44 md:w-36 md:h-36 flex-shrink-0 bg-surface rounded-2xl shadow-2xl flex items-center justify-center overflow-hidden">
             {songs[0]?.thumbnail_url ? (
               <img src={songs[0].thumbnail_url} alt={playlist.name} className="w-full h-full object-cover" />
             ) : (
-              <div className="text-textMuted text-4xl">♫</div>
+              <div className="text-textMuted text-4xl font-mono">♫</div>
             )}
           </div>
 
-          <div className="flex-1 min-w-0 pb-1">
-            <div className="flex items-center gap-2 mb-1">
+          <div className="flex-1 min-w-0 pb-1 text-center md:text-left">
+            <div className="flex items-center justify-center md:justify-start gap-2 mb-1.5">
               {playlist.is_public
                 ? <Globe size={13} className="text-accent flex-shrink-0" />
                 : <Lock size={13} className="text-textMuted flex-shrink-0" />
               }
-              <span className="text-xs text-textMuted uppercase tracking-widest">Playlist</span>
+              <span className="text-[10px] text-textMuted uppercase tracking-[0.2em] font-bold">Playlist</span>
             </div>
-            <h1 className="text-3xl font-bold text-text line-clamp-2">{playlist.name}</h1>
-            <p className="text-sm text-textMuted mt-2">
-              {songs.length} songs · {totalDuration(songs)}
+            <h1 className="text-3xl md:text-4xl font-black text-text line-clamp-2 leading-tight tracking-tight">{playlist.name}</h1>
+            <p className="text-sm text-textMuted mt-3 font-medium">
+              <span className="text-textSecondary">{songs.length} songs</span> · {totalDuration(songs)}
             </p>
 
-            <div className="flex items-center gap-3 mt-4">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-6">
               <button
                 onClick={handlePlayAll}
                 disabled={songs.length === 0}
-                className="flex items-center gap-2 px-5 py-2.5 bg-accent hover:bg-accentHover text-black font-semibold text-sm rounded-full transition-colors disabled:opacity-40"
+                className="flex items-center gap-2 px-7 py-3 bg-accent hover:bg-accentHover text-black font-bold text-sm rounded-full transition-all active:scale-95 disabled:opacity-40"
               >
-                <Play size={16} fill="currentColor" />
+                <Play size={18} fill="currentColor" />
                 Play
               </button>
               <button
                 onClick={() => { toggleShuffle(); handlePlayAll(); }}
                 disabled={songs.length === 0}
-                className={`flex items-center gap-2 px-4 py-2.5 border text-sm font-medium rounded-full transition-colors disabled:opacity-40 ${
-                  shuffle ? 'border-accent text-accent' : 'border-border text-textSecondary hover:text-text hover:border-text'
+                className={`flex items-center gap-2 px-5 py-3 border text-sm font-bold rounded-full transition-all active:scale-95 disabled:opacity-40 ${
+                  shuffle ? 'border-accent text-accent bg-accent/5' : 'border-border text-textSecondary hover:text-text hover:border-text'
                 }`}
               >
-                <Shuffle size={15} />
+                <Shuffle size={16} />
                 Shuffle
               </button>
               {isOwner && (
                 <button
+                  onClick={() => setAddSongOpen(true)}
+                  className="flex items-center gap-2 px-5 py-3 border border-border text-sm font-bold text-textSecondary hover:text-text hover:border-text rounded-full transition-all active:scale-95"
+                >
+                  <Plus size={18} />
+                  add a song
+                </button>
+              )}
+              {isOwner && (
+                <button
                   onClick={() => setEditOpen(true)}
-                  className="p-2.5 border border-border text-textMuted hover:text-text rounded-full transition-colors"
+                  className="p-3 border border-border text-textMuted hover:text-text rounded-full transition-colors order-last md:order-none"
                   title="Edit playlist"
                 >
-                  <Pencil size={15} />
+                  <Pencil size={16} />
                 </button>
               )}
               {playlist.is_public && (
                 <button
                   onClick={handleCopyLink}
-                  className={`p-2.5 border rounded-full transition-colors ${
+                  className={`p-3 border rounded-full transition-colors ${
                     copied
-                      ? 'border-accent text-accent'
+                      ? 'border-accent text-accent bg-accent/5'
                       : 'border-border text-textMuted hover:text-text'
                   }`}
                   title="Copy share link"
                 >
-                  <Link size={15} />
+                  <Link size={16} />
+                </button>
+              )}
+              {isOwner && (
+                <button
+                  onClick={handleDeletePlaylist}
+                  className="p-3 border border-border text-textMuted hover:text-red-400 hover:border-red-400/50 rounded-full transition-colors"
+                  title="Delete playlist"
+                >
+                  <Trash2 size={16} />
                 </button>
               )}
             </div>
@@ -325,6 +378,13 @@ export default function PlaylistDetailPage() {
           playlist={playlist}
           onSubmit={handleEdit}
           onClose={() => setEditOpen(false)}
+        />
+      )}
+      {addSongOpen && (
+        <AddSongToPlaylistModal
+          existingSongIds={songs.map(s => s.id)}
+          onAdd={handleAddSong}
+          onClose={() => setAddSongOpen(false)}
         />
       )}
     </div>
