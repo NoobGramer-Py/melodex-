@@ -5,6 +5,7 @@ import { useLibraryStore } from '../store/libraryStore';
 import { usePlayerStore } from '../store/playerStore';
 import { SongCard } from '../components/shared/SongCard';
 import { ListenOnlineSearch } from '../components/shared/ListenOnlineSearch';
+import { ArtistSearch } from '../components/shared/ArtistSearch';
 import type { Song } from '../types';
 
 export default function HomePage() {
@@ -19,7 +20,6 @@ export default function HomePage() {
     removeFavoriteArtist,
   } = useLibraryStore();
   const { playSong } = usePlayerStore();
-  const [newArtist, setNewArtist] = useState('');
   const [showAddArtist, setShowAddArtist] = useState(false);
 
   useEffect(() => {
@@ -30,21 +30,12 @@ export default function HomePage() {
   
   // Basic recommendation logic: prefer favorite artists, else random
   const recommendations = [...songs].sort((a, b) => {
-    const aFav = favoriteArtists.some(fa => a.artist?.toLowerCase().includes(fa.toLowerCase()));
-    const bFav = favoriteArtists.some(fa => b.artist?.toLowerCase().includes(fa.toLowerCase()));
+    const aFav = favoriteArtists.some(fa => a.artist?.toLowerCase().includes(fa.name.toLowerCase()));
+    const bFav = favoriteArtists.some(fa => b.artist?.toLowerCase().includes(fa.name.toLowerCase()));
     if (aFav && !bFav) return -1;
     if (!aFav && bFav) return 1;
     return Math.random() - 0.5;
   }).slice(0, 10);
-
-  const handleAddArtist = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newArtist.trim()) {
-      addFavoriteArtist(newArtist.trim());
-      setNewArtist('');
-      setShowAddArtist(false);
-    }
-  };
 
   const Section = ({ title, icon: Icon, children, action }: { title: string; icon: any; children: React.ReactNode; action?: React.ReactNode }) => (
     <div className="mb-12">
@@ -142,33 +133,25 @@ export default function HomePage() {
       >
         <div className="flex flex-wrap gap-4">
           {showAddArtist && (
-             <form onSubmit={handleAddArtist} className="flex gap-2 w-full max-w-md animate-in slide-in-from-right-4 duration-300">
-               <input 
-                type="text" 
-                value={newArtist} 
-                onChange={(e) => setNewArtist(e.target.value)}
-                placeholder="Enter artist name..."
-                className="flex-1 bg-surface border border-white/10 rounded-xl px-4 py-2 focus:outline-none focus:border-accent"
-                autoFocus
-               />
-               <button type="submit" className="px-6 py-2 bg-accent text-black font-semibold rounded-xl hover:bg-accentHover transition-colors">
-                 Add
-               </button>
-             </form>
+             <ArtistSearch onAdd={() => setShowAddArtist(false)} />
           )}
 
           {favoriteArtists.length > 0 ? (
             favoriteArtists.map((artist, idx) => (
               <div key={idx} className="group relative flex items-center gap-3 px-6 py-4 bg-surface/50 border border-white/5 rounded-2xl hover:bg-surfaceHover hover:border-accent/30 transition-all duration-300">
-                <div className="w-12 h-12 bg-accent/20 rounded-full flex items-center justify-center text-accent border border-accent/20">
-                  {artist.charAt(0).toUpperCase()}
+                <div className="w-12 h-12 bg-accent/10 rounded-full overflow-hidden flex items-center justify-center text-accent border border-accent/20">
+                  {artist.image_url ? (
+                    <img src={artist.image_url} alt={artist.name} className="w-full h-full object-cover" />
+                  ) : (
+                    artist.name.charAt(0).toUpperCase()
+                  )}
                 </div>
                 <div>
-                  <h4 className="font-semibold text-text">{artist}</h4>
-                  <p className="text-xs text-textMuted uppercase tracking-widest font-bold">Artist</p>
+                  <h4 className="font-semibold text-text">{artist.name}</h4>
+                  <p className="text-[10px] text-textMuted uppercase tracking-widest font-bold">Artist</p>
                 </div>
                 <button
-                  onClick={() => removeFavoriteArtist(artist)}
+                  onClick={() => removeFavoriteArtist(artist.name)}
                   className="p-1.5 text-textMuted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity ml-2"
                 >
                   <Trash2 size={14} />

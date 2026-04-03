@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Song, GuestSong, SortOption, SortOrder } from '../types';
+import type { Song, GuestSong, SortOption, SortOrder, Artist } from '../types';
 import { fetchSongs, deleteSong as apiDeleteSong } from '../lib/api';
 import {
   getGuestSongs,
@@ -18,15 +18,15 @@ interface LibraryStore {
   initialized: boolean;
   lastAuthStatus: boolean | null;
   recentlyListened: Song[];
-  favoriteArtists: string[];
+  favoriteArtists: Artist[];
 
   loadSongs: (isAuthenticated: boolean) => Promise<void>;
   addSong: (song: Partial<Song> & { title: string; storage_path: string; audio_url?: string }, isAuthenticated: boolean) => void;
   deleteSong: (id: string, isAuthenticated: boolean) => Promise<void>;
   addToRecentlyListened: (song: Song) => void;
   removeFromRecentlyListened: (id: string) => void;
-  addFavoriteArtist: (artist: string) => void;
-  removeFavoriteArtist: (artist: string) => void;
+  addFavoriteArtist: (artist: Artist) => void;
+  removeFavoriteArtist: (name: string) => void;
   setSort: (sort: SortOption) => void;
   setOrder: (order: SortOrder) => void;
   setSearchQuery: (query: string) => void;
@@ -113,14 +113,14 @@ export const useLibraryStore = create<LibraryStore>()(
 
       addFavoriteArtist: (artist) => {
         set(state => {
-          if (state.favoriteArtists.includes(artist)) return state;
-          return { favoriteArtists: [...state.favoriteArtists, artist] };
+          if (state.favoriteArtists.some(a => a.name === artist.name)) return state;
+          return { favoriteArtists: [artist, ...state.favoriteArtists] };
         });
       },
 
-      removeFavoriteArtist: (artist) => {
+      removeFavoriteArtist: (name) => {
         set(state => ({
-          favoriteArtists: state.favoriteArtists.filter(a => a !== artist)
+          favoriteArtists: state.favoriteArtists.filter(a => a.name !== name)
         }));
       },
 

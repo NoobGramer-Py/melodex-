@@ -14,23 +14,24 @@ export function ListenOnlineSearch() {
   const { playSong } = usePlayerStore();
 
   useEffect(() => {
+    if (!query.trim()) {
+      setResults([]);
+      setIsOpen(false);
+      return;
+    }
+
     const timer = setTimeout(async () => {
-      if (query.trim().length > 2) {
-        setLoading(true);
-        try {
-          const { results } = await searchYouTube(query, 6);
-          setResults(results);
-          setIsOpen(true);
-        } catch (err) {
-          console.error('Search failed:', err);
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        setResults([]);
-        setIsOpen(false);
+      setLoading(true);
+      try {
+        const { results } = await searchYouTube(query, 8); // Increased limit slightly
+        setResults(results);
+        setIsOpen(true);
+      } catch (err) {
+        console.error('Search failed:', err);
+      } finally {
+        setLoading(false);
       }
-    }, 500);
+    }, 300); // Reduced debounce for a more 'live' feel
 
     return () => clearTimeout(timer);
   }, [query]);

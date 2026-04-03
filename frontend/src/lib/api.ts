@@ -187,3 +187,9 @@ export async function searchYouTube(query: string, limit = 10) {
     `/api/convert/search?q=${encodeURIComponent(query)}&limit=${limit}`
   );
 }
+
+export async function searchArtists(query: string) {
+  return apiFetch<{ results: import('../types').Artist[] }>(
+    `/api/artists/search?q=${encodeURIComponent(query)}`
+  );
+}

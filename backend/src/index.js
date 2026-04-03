@@ -9,6 +9,7 @@ const path = require('path');
 const convertRouter = require('./routes/convert');
 const songsRouter = require('./routes/songs');
 const playlistsRouter = require('./routes/playlists');
+const artistsRouter = require('./routes/artists');
 
 const app = express();
 const PORT = process.env.PORT || 5173;
@@ -55,6 +56,7 @@ app.use('/api/convert', globalLimiter);
 app.use('/api/convert', convertRouter);
 app.use('/api/songs', songsRouter);
 app.use('/api/playlists', playlistsRouter);
+app.use('/api/artists', artistsRouter);
 
 // Health check
 app.get('/health', (req, res) => {

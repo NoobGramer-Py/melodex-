@@ -66,6 +66,13 @@ export interface AuthUser {
   };
 }
 
+export interface Artist {
+  id?: string;
+  name: string;
+  image_url?: string | null;
+  spotify_url?: string;
+}
+
 // Guest song stored in localStorage
 export interface GuestSong extends Song {
   audio_url: string; // guests always have embedded URL
