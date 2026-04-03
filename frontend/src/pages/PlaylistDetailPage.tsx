@@ -121,13 +121,15 @@ function SortableSongRow({
         {formatDuration(song.duration_seconds)}
       </span>
 
-      <button 
-        onClick={(e) => { e.stopPropagation(); toggleLikeSong(song, !!user); }}
-        className={`transition-colors p-1 rounded-full ${song.is_liked ? 'text-accent opacity-100' : 'text-textMuted hover:text-text opacity-0 group-hover:opacity-100'}`}
-      >
+      {user && (
+        <button 
+          onClick={(e) => { e.stopPropagation(); toggleLikeSong(song, !!user); }}
+          className={`transition-colors p-1 rounded-full ${song.is_liked ? 'text-accent opacity-100' : 'text-textMuted hover:text-text opacity-0 group-hover:opacity-100'}`}
+        >
+          <Heart size={16} fill={song.is_liked ? 'currentColor' : 'none'} />
+        </button>
+      )}
 
-        <Heart size={16} fill={song.is_liked ? 'currentColor' : 'none'} />
-      </button>
 
 
       {isOwner && (

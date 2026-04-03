@@ -117,13 +117,15 @@ export function SongRow({
         {formatDuration(song.duration_seconds)}
       </span>
 
-      {/* Like button */}
-      <button 
-        onClick={handleLike}
-        className={`transition-colors p-1 rounded-full ${isLiked ? 'text-accent opacity-100' : 'text-textMuted hover:text-text opacity-0 group-hover:opacity-100'}`}
-      >
-        <Heart size={16} fill={isLiked ? 'currentColor' : 'none'} />
-      </button>
+      {user && (
+        <button 
+          onClick={handleLike}
+          className={`transition-colors p-1 rounded-full ${isLiked ? 'text-accent opacity-100' : 'text-textMuted hover:text-text opacity-0 group-hover:opacity-100'}`}
+        >
+          <Heart size={16} fill={isLiked ? 'currentColor' : 'none'} />
+        </button>
+      )}
+
 
 
       {/* Context menu */}
@@ -145,13 +147,16 @@ export function SongRow({
               Play
             </button>
 
-            <button
-              onClick={(e) => { handleLike(e); setMenuOpen(false); }}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-text hover:bg-surfaceHover transition-colors text-left"
-            >
-              <Heart size={14} fill={isLiked ? 'currentColor' : 'none'} className={isLiked ? 'text-accent' : ''} />
-              {isLiked ? 'Unlike' : 'Like'}
-            </button>
+            {user && (
+              <button
+                onClick={(e) => { handleLike(e); setMenuOpen(false); }}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-text hover:bg-surfaceHover transition-colors text-left"
+              >
+                <Heart size={14} fill={isLiked ? 'currentColor' : 'none'} className={isLiked ? 'text-accent' : ''} />
+                {isLiked ? 'Unlike' : 'Like'}
+              </button>
+            )}
+
 
 
             {playlists.length > 0 && onAddToPlaylist && (

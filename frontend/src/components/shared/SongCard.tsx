@@ -81,14 +81,17 @@ export function SongCard({ song, onMenuClick, queue }: SongCardProps) {
         </p>
       </div>
 
-      <div className="absolute top-6 left-6 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-        <button 
-          onClick={handleLike}
-          className={`p-1.5 bg-black/60 rounded-full transition-colors ${isLiked ? 'text-red-500' : 'text-white hover:text-red-400'}`}
-        >
-          <Heart size={18} fill={isLiked ? 'currentColor' : 'none'} />
-        </button>
-      </div>
+      {user && (
+        <div className="absolute top-6 left-6 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          <button 
+            onClick={handleLike}
+            className={`p-1.5 bg-black/60 rounded-full transition-colors ${isLiked ? 'text-red-500' : 'text-white hover:text-red-400'}`}
+          >
+            <Heart size={18} fill={isLiked ? 'currentColor' : 'none'} />
+          </button>
+        </div>
+      )}
+
 
       <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity z-10">
 

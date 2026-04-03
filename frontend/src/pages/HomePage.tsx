@@ -10,8 +10,11 @@ import { ArtistSearch } from '../components/shared/ArtistSearch';
 import type { Song } from '../types';
 import { ChevronRight } from 'lucide-react';
 
+import { useUIStore } from '../store/uiStore';
+
 export default function HomePage() {
   const { user } = useAuthStore();
+  const { openAuthModal } = useUIStore();
   const {
     songs,
     recentlyListened,
@@ -69,7 +72,7 @@ export default function HomePage() {
   };
 
   const Section = ({ title, icon: Icon, children, action }: { title: string; icon: any; children: React.ReactNode; action?: React.ReactNode }) => (
-    <div className="mb-12">
+    <div className="mb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent">
@@ -83,58 +86,90 @@ export default function HomePage() {
     </div>
   );
 
+  const EmptyState = ({ message, icon: Icon }: { message: string, icon: any }) => (
+    <div className="flex flex-col items-center justify-center py-16 px-4 bg-surface/30 rounded-2xl border border-dashed border-white/5">
+      <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center text-textMuted mb-4">
+        <Icon size={24} />
+      </div>
+      <p className="text-textMuted text-center max-w-xs">{message}</p>
+    </div>
+  );
+
   return (
     <div className="flex-1 overflow-y-auto px-6 py-8 bg-gradient-to-b from-background via-surface to-background custom-scrollbar">
       {/* Hero / Search */}
       <div className="relative mb-16 text-center pt-8">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-accent/20 blur-[120px] rounded-full -z-10" />
         <h1 className="text-5xl font-extrabold mb-4 bg-gradient-to-r from-white to-textMuted bg-clip-text text-transparent">
-          Welcome back to Melodex
+          {user ? 'Welcome back to Melodex' : 'Sync your music everywhere'}
         </h1>
         <p className="text-textMuted text-lg mb-12 max-w-2xl mx-auto">
-          Explore millions of tracks, sync your library, and listen anywhere.
+          {user 
+            ? 'Explore millions of tracks, sync your library, and listen anywhere.' 
+            : 'Join Melodex to save your favorites, create playlists, and build your personalized music home.'}
         </p>
         <ListenOnlineSearch />
+
+        {!user && (
+          <div className="mt-8 flex justify-center animate-in fade-in zoom-in-95 duration-500 delay-200">
+            <div className="p-6 bg-surface/50 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl max-w-xl">
+              <h3 className="text-xl font-bold mb-2">Ready to start your journey?</h3>
+              <p className="text-textMuted mb-6 text-sm">
+                Create an account to unlock liked songs, listening history, and personal recommendations.
+              </p>
+              <button 
+                onClick={openAuthModal}
+                className="px-8 py-3 bg-accent hover:bg-accentHover text-black font-bold rounded-full transition-all hover:scale-105 active:scale-95 shadow-xl shadow-accent/20"
+              >
+                Get Started for Free
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Liked Songs */}
-      <Section title="Liked Songs" icon={Heart}>
-        {likedSongs.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {likedSongs.map(song => (
-              <SongCard key={song.id} song={song} queue={likedSongs} onMenuClick={(e) => handleMenuClick(e, song.id, 'liked')} />
-            ))}
-          </div>
-        ) : (
-          <EmptyState message="Explore and like some songs first!" icon={Plus} />
-        )}
-      </Section>
+      {user ? (
+        <>
+          {/* Liked Songs */}
+          <Section title="Liked Songs" icon={Heart}>
+            {likedSongs.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                {likedSongs.map(song => (
+                  <SongCard key={song.id} song={song} queue={likedSongs} onMenuClick={(e) => handleMenuClick(e, song.id, 'liked')} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState message="Explore and like some songs first!" icon={Plus} />
+            )}
+          </Section>
 
-      {/* Recently Listened */}
-      <Section title="Recently Listened" icon={Music}>
-        {recentlyListened.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {recentlyListened.map(song => (
-              <SongCard key={song.id} song={song} onMenuClick={(e) => handleMenuClick(e, song.id, 'recent')} />
-            ))}
-          </div>
-        ) : (
-          <EmptyState message="No recently listened songs." icon={Music} />
-        )}
-      </Section>
+          {/* Recently Listened */}
+          <Section title="Recently Listened" icon={Music}>
+            {recentlyListened.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                {recentlyListened.map(song => (
+                  <SongCard key={song.id} song={song} onMenuClick={(e) => handleMenuClick(e, song.id, 'recent')} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState message="No recently listened songs." icon={Music} />
+            )}
+          </Section>
 
-      {/* Recommended */}
-      <Section title="You May Like" icon={Sparkles}>
-        {recommendations.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {recommendations.map(song => (
-              <SongCard key={song.id} song={song} onMenuClick={(e) => handleMenuClick(e, song.id, 'recommended')} />
-            ))}
-          </div>
-        ) : (
-          <EmptyState message="Add more songs to your library to get recommendations." icon={Sparkles} />
-        )}
-      </Section>
+          {/* Recommended */}
+          <Section title="You May Like" icon={Sparkles}>
+            {recommendations.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                {recommendations.map(song => (
+                  <SongCard key={song.id} song={song} onMenuClick={(e) => handleMenuClick(e, song.id, 'recommended')} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState message="Add more songs to your library to get recommendations." icon={Sparkles} />
+            )}
+          </Section>
+        </>
+      ) : null}
 
       {/* Context Menu Overlay */}
       {activeMenu && (

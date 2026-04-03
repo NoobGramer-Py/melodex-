@@ -61,16 +61,19 @@ export const useLibraryStore = create<LibraryStore>()(
         try {
           if (isAuthenticated) {
             const { songs: serverSongs } = await fetchSongs(get().sort, get().order);
-            // Safety merge: keep local is_liked status if server doesn't have it
+            // Safety merge: keep local is_liked status if server doesn't have it (null/undefined)
             const currentSongs = get().songs;
             const mergedSongs = serverSongs.map(ss => {
               const local = currentSongs.find(ls => ls.id === ss.id);
+              // Server is the ultimate source of truth, but we fallback to local state 
+              // IF the server returns null/undefined (e.g. data-loss periods or schema gaps)
               return { 
                 ...ss, 
-                is_liked: ss.is_liked !== undefined ? ss.is_liked : local?.is_liked 
+                is_liked: (ss.is_liked !== null && ss.is_liked !== undefined) ? ss.is_liked : local?.is_liked 
               };
             });
             set({ songs: mergedSongs, initialized: true, lastAuthStatus: isAuthenticated });
+
           } else {
             const guestSongs = getGuestSongs();
             set({ songs: guestSongs, initialized: true, lastAuthStatus: isAuthenticated });
@@ -116,6 +119,8 @@ export const useLibraryStore = create<LibraryStore>()(
       },
 
       toggleLikeSong: async (targetSong, isAuthenticated) => {
+        if (!isAuthenticated) return; // Feature restricted: login required
+
         const existingSong = get().songs.find(s => s.id === targetSong.id);
         const newStatus = existingSong ? !existingSong.is_liked : true;
 
@@ -131,17 +136,11 @@ export const useLibraryStore = create<LibraryStore>()(
             songs: [newSong, ...state.songs]
           }));
 
-          if (isAuthenticated) {
-            try {
-              const { createSong } = await import('../lib/api');
-              await createSong({ ...targetSong, is_liked: true });
-            } catch (err) {
-              console.error('[Library] Failed to create song in DB via like:', err);
-            }
-          } else {
-            // Guest mode persistence
-            const { addGuestSong } = await import('../lib/guestStorage');
-            addGuestSong({ ...newSong } as any);
+          try {
+            const { createSong } = await import('../lib/api');
+            await createSong({ ...targetSong, is_liked: true });
+          } catch (err) {
+            console.error('[Library] Failed to create song in DB via like:', err);
           }
           return;
         }
@@ -152,23 +151,18 @@ export const useLibraryStore = create<LibraryStore>()(
           recentlyListened: state.recentlyListened.map(s => s.id === targetSong.id ? { ...s, is_liked: newStatus } : s)
         }));
 
-        if (isAuthenticated) {
-          try {
-            const { updateSong } = await import('../lib/api');
-            await updateSong(targetSong.id, { is_liked: newStatus });
-          } catch (err) {
-            console.error('[Library] Failed to toggle like in DB:', err);
-            // Revert on failure
-            set(state => ({
-              songs: state.songs.map(s => s.id === targetSong.id ? { ...s, is_liked: !newStatus } : s)
-            }));
-          }
-        } else {
-          // Guest mode persistence
-          const { updateGuestSong } = await import('../lib/guestStorage');
-          updateGuestSong(targetSong.id, { is_liked: newStatus });
+        try {
+          const { updateSong } = await import('../lib/api');
+          await updateSong(targetSong.id, { is_liked: newStatus });
+        } catch (err) {
+          console.error('[Library] Failed to toggle like in DB:', err);
+          // Revert on failure
+          set(state => ({
+            songs: state.songs.map(s => s.id === targetSong.id ? { ...s, is_liked: !newStatus } : s)
+          }));
         }
       },
+
 
 
 

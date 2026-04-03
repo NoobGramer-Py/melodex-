@@ -183,23 +183,26 @@ export function ListenOnlineSearch() {
                   </div>
 
                   {/* Like Button */}
-                  <div 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleLikeSong(song, !!user);
-                    }}
-                    className={`p-2 rounded-full transition-all ${
-                      librarySongs.find(ls => ls.id === (song.youtube_id || song.id))?.is_liked 
-                        ? 'text-red-500 bg-red-500/10' 
-                        : 'text-textMuted hover:text-red-400 hover:bg-white/5 opacity-0 group-hover/item:opacity-100'
-                    }`}
-                  >
-                    <Heart 
-                      size={16} 
-                      fill={librarySongs.find(ls => ls.id === (song.youtube_id || song.id))?.is_liked ? 'currentColor' : 'none'} 
-                    />
-                  </div>
+                  {user && (
+                    <div 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleLikeSong(song, !!user);
+                      }}
+                      className={`p-2 rounded-full transition-all ${
+                        librarySongs.find(ls => ls.id === (song.youtube_id || song.id))?.is_liked 
+                          ? 'text-red-500 bg-red-500/10' 
+                          : 'text-textMuted hover:text-red-400 hover:bg-white/5 opacity-0 group-hover/item:opacity-100'
+                      }`}
+                    >
+                      <Heart 
+                        size={16} 
+                        fill={librarySongs.find(ls => ls.id === (song.youtube_id || song.id))?.is_liked ? 'currentColor' : 'none'} 
+                      />
+                    </div>
+                  )}
                 </button>
+
 
               ))
             )}
