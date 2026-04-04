@@ -104,7 +104,7 @@ async function getStreamUrl(youtubeUrl) {
   ];
 
   const { stdout } = await execFileAsync('yt-dlp', args, {
-    timeout: 15000,
+    timeout: 60000, // 60s: stream URL lookup can hit many redirects
   });
 
   const streamUrl = stdout.trim();
@@ -226,18 +226,24 @@ async function searchYouTube(query, limit = 10) {
     }
   }
 
+  // Use a cleaner search query and ensure it's handled as a single argument
+  // We specify the provider and limit clearly
+  const searchQuery = `${query} official audio`.trim();
+  const searchPattern = `ytsearch${limit}:${searchQuery}`;
+
   const args = [
-    `ytsearch${limit}:${query} official audio`,
-    '--flat-playlist', // EXTREMELY IMPORTANT for speed: only fetch search result page metadata
-    '--print-json',    // Use print-json for speed over dump-json
+    searchPattern,
+    '--flat-playlist',
+    '--dump-json', // switch back to dump-json for better field consistency across versions
     '--no-playlist',
     '--no-warnings',
     '--quiet',
+    '--skip-download',
   ];
 
   try {
-    const { stdout } = await execFileAsync('yt-dlp', args, {
-      timeout: 15000, // Reduced timeout for snappier feedback
+    const { stdout, stderr } = await execFileAsync('yt-dlp', args, {
+      timeout: 60000, // 60s: search can be slow
       maxBuffer: 10 * 1024 * 1024,
     });
 
@@ -248,15 +254,18 @@ async function searchYouTube(query, limit = 10) {
       .map(line => {
         try {
           const info = JSON.parse(line);
+          const id = info.id || info.url?.split('v=')[1]?.split('&')[0];
+          if (!id) return null;
+
           return {
-            id: info.id || `yt-${Date.now()}-${Math.random()}`,
+            id,
             title: info.title || 'Unknown Title',
-            artist: info.uploader || info.channel || 'Unknown Artist',
-            thumbnail_url: info.thumbnails?.[0]?.url || info.thumbnail || '',
+            artist: info.uploader || info.channel || info.artist || 'Unknown Artist',
+            thumbnail_url: info.thumbnail || info.thumbnails?.[0]?.url || '',
             duration_seconds: Math.round(info.duration || 0),
-            youtube_id: info.id,
-            storage_path: '', // Mark as online song
-            audio_url: `https://www.youtube.com/watch?v=${info.id}`,
+            youtube_id: id,
+            storage_path: '',
+            audio_url: `https://www.youtube.com/watch?v=${id}`,
             created_at: new Date().toISOString(),
           };
         } catch (e) {
@@ -268,12 +277,15 @@ async function searchYouTube(query, limit = 10) {
     searchCache.set(cacheKey, { timestamp: now, results });
     return results;
   } catch (err) {
-    console.error('[Search] yt-dlp search failed:', err.message);
+    console.error(`[Search] yt-dlp search failed for query "${query}":`, err.message);
+    if (err.stdout) console.error('[Search] stdout:', err.stdout.slice(0, 500));
+    if (err.stderr) console.error('[Search] stderr:', err.stderr.slice(0, 500));
+    
     // If it's a timeout error but we have stale cache, return it
     if (err.message.includes('timeout') && searchCache.has(cacheKey)) {
       return searchCache.get(cacheKey).results;
     }
-    throw new Error('Search failed. Please try again.');
+    throw new Error(`Search failed: ${err.message.includes('timeout') ? 'Request timed out' : 'Internal service error'}`);
   }
 }
 
