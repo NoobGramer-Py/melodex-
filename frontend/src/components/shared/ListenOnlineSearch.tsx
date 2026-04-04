@@ -33,6 +33,9 @@ export function ListenOnlineSearch() {
     }
 
     const timer = setTimeout(async () => {
+      // Only search if query is long enough to be meaningful
+      if (query.trim().length < 2) return;
+
       setLoading(true);
       try {
         const { results } = await searchYouTube(query, 12);
@@ -51,7 +54,7 @@ export function ListenOnlineSearch() {
       } finally {
         setLoading(false);
       }
-    }, 200); // Super low debounce for live feel
+    }, 450); // Increased debounce for better rate reliability
 
     return () => clearTimeout(timer);
   }, [query]);

@@ -42,15 +42,24 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Global rate limiter — protect conversion endpoint from abuse
-const globalLimiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many requests. Please try again later.' },
+// Strict rate limiter for conversion starting — prevent server overload
+const conversionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Max 10 conversions per 15 mins
+  message: { error: 'Conversion limit reached. Please try again in 15 minutes.' },
 });
-app.use('/api/convert', globalLimiter);
+
+// More permissive limiter for search — allow for "live feel" without blocking users
+const searchLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 60, // 1 search per second on average
+  message: { error: 'Too many searches. Please wait a moment.' },
+});
+
+// Apply limiters accurately
+app.use('/api/convert/start', conversionLimiter);
+app.use('/api/convert/search', searchLimiter);
+app.use('/api/convert/stream', searchLimiter); // Stream also needs to be permissive
 
 // Routes
 app.use('/api/convert', convertRouter);

@@ -14,7 +14,15 @@ export function ArtistSearch({ onAdd }: { onAdd: () => void }) {
   const { addFavoriteArtist } = useLibraryStore();
 
   useEffect(() => {
+    if (!query.trim()) {
+      setResults([]);
+      setIsOpen(false);
+      return;
+    }
+
     const timer = setTimeout(async () => {
+      if (query.trim().length < 2) return;
+      
       setLoading(true);
       try {
         const { results } = await searchArtists(query);
@@ -25,7 +33,7 @@ export function ArtistSearch({ onAdd }: { onAdd: () => void }) {
       } finally {
         setLoading(false);
       }
-    }, 400);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [query]);
