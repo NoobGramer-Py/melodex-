@@ -130,7 +130,7 @@ export function AddSongModal() {
       )}
 
       {/* Main modal */}
-      <div className="fixed inset-0 z-40 flex items-center justify-center animate-fade-in">
+      <div className="fixed inset-0 z-[70] flex items-center justify-center animate-fade-in">
         <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={!isProcessing ? handleClose : undefined} />
 
         <div className="relative z-10 w-full max-w-md mx-4 bg-[#111111] border border-border rounded-2xl shadow-2xl overflow-hidden">
